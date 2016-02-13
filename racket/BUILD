@@ -12,6 +12,6 @@ docker_build(
 genrule(
   name = "racket-src",
   outs = ["racket-src.tar.gz"],
-  srcs = ["@racket-minimal-x86_64-6.2.1//file"],
+  srcs = ["@racket_minimal_x86_64_6_2_1//file"],
   cmd = "tail +519 $< > $@"
 )

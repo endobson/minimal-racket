@@ -11,7 +11,7 @@ docker_build(
 genrule(
   name = "libc-deb",
   outs = ["libc.deb"],
-  srcs = ["@libc-udeb//file"],
+  srcs = ["@libc_udeb//file"],
   cmd = "cp $(location @libc-udeb//file) $@"
 )
 

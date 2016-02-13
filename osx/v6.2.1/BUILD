@@ -1,6 +1,7 @@
 load("files", "V621_OSX_FILES")
 genrule(
   name = "racket-src-osx",
+  visibility = ["//visibility:public"],
   outs = V621_OSX_FILES,
   srcs = ["@racket_minimal_x86_64_6_2_1_osx//file"],
   cmd = "7z x $< 'Racket v6.2.1/Racket v6.2.1/' -aoa -o$(@D) >/dev/null;" +

@@ -21,3 +21,9 @@ http_file(
   url = "http://mirror.racket-lang.org/installers/6.4/racket-minimal-6.4-x86_64-macosx.dmg",
   sha256 = "0301c5c70ac7363f00e7e90bb55bc7d772eb0b668e013631c46a6bbe73445730"
 )
+
+http_file(
+  name = "racket_rackunit_lib",
+  url = "http://mirror.racket-lang.org/releases/6.4/pkgs/rackunit-lib.zip",
+  sha256 = "3b08ca933d00a6602985d9d90721f9c035b46236ad53e1adda46082ba04bd344"
+)

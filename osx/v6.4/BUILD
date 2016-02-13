@@ -1,4 +1,5 @@
 load("files", "V64_OSX_FILES")
+load("files", "RACKUNIT_FILES")
 genrule(
   name = "racket-src-osx",
   visibility = ["//visibility:public"],
@@ -10,4 +11,12 @@ genrule(
         "rmdir \"$(@D)/Racket v6.4\";" +
         "cp -rfp $$(find $(@D)/v6.4 -depth 1) $(@D);" +
         "rm -rf \"$(@D)/v6.4\";"
+)
+
+genrule(
+  name = "rackunit",
+  visibility = ["//visibility:public"],
+  outs = RACKUNIT_FILES,
+  srcs = ["@racket_rackunit_lib//file"],
+  cmd = "unzip -q $< 'rackunit/*' -d $(@D)/collects"
 )

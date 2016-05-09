@@ -17,6 +17,6 @@ genrule(
   name = "rackunit",
   visibility = ["//visibility:public"],
   outs = RACKUNIT_FILES,
-  srcs = ["@racket_rackunit_lib//file"],
+  srcs = ["@racket_rackunit_lib_6_4//file"],
   cmd = "unzip -q $< 'rackunit/*' -d $(@D)/collects"
 )

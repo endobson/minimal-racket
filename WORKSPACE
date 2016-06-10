@@ -1,3 +1,5 @@
+workspace(name = "minimal_racket")
+
 http_file(
   name = "libc_udeb",
   url = "http://http.us.debian.org/debian/pool/main/g/glibc/libc6-udeb_2.19-18+deb8u1_amd64.udeb",

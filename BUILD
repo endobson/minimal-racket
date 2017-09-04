@@ -1,14 +1,3 @@
-# This is my first build file
-load("/tools/build_defs/docker/docker", "docker_build")
-
-
-docker_build(
-  name = "minimal_deb",
-  visibility = ["//visibility:public"],
-  debs = [":libc.deb"],
-  tars = [":lib64-sym.tar"],
-)
-
 genrule(
   name = "libc-deb",
   outs = ["libc.deb"],

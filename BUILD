@@ -1,3 +1,5 @@
+export_files(["releases.bzl", "racket.bzl"])
+
 genrule(
   name = "libc-deb",
   outs = ["libc.deb"],

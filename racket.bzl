@@ -33,6 +33,40 @@ def _bin_impl(ctx):
 
   return struct(runfiles=runfiles)
 
+def racket_compile(ctx, src_file, output_file, inputs):
+  arguments = []
+  arguments += ["-l", "racket/base"]
+  arguments += ["-l", "racket/file"]
+  arguments += ["-l", "compiler/compiler"]
+  # The file needs to be in the same directory as the .zos because thats how the racket compiler works.
+  if (src_file.root != ctx.bin_dir):
+    arguments += [
+      "-e",
+      "(define gen-path (build-path \"%s\" \"%s\"))" %
+           (ctx.bin_dir.path, src_file.short_path)]
+    arguments += [
+      "-e",
+      "(define src-path gen-path)"]
+    arguments += [
+      "-e",
+      "(begin" +
+      "  (make-parent-directory* gen-path) " +
+      "  (make-file-or-directory-link (path->complete-path \"%s\") gen-path))" % src_file.path]
+  else:
+    arguments += [
+      "-e",
+      "(define src-path \"%s\")" % src_file.path]
+  arguments += [
+    "-e",
+    "((compile-zos #f #:module? #t) (list src-path) \"%s\")" % output_file.dirname]
+
+  ctx.action(
+    executable=ctx.executable._racket_bin,
+    arguments = arguments,
+    inputs=inputs,
+    outputs=[output_file],
+  )
+
 def _lib_impl(ctx):
   if (len(ctx.attr.srcs) != 1):
     fail("Must supply exactly one source file: Got %s" % len(ctx.attr.srcs), "srcs")
@@ -47,31 +81,8 @@ def _lib_impl(ctx):
   for target in ctx.attr.deps:
     zos = zos | set(target.racket_transitive_zos)
 
-  arguments = []
-  arguments += ["-l", "racket/base"]
-  arguments += ["-l", "racket/file"]
-  arguments += ["-l", "compiler/compiler"]
-  # The file needs to be in the same directory as the .zos because thats how the racket compiler works.
-  if (src_file.root != ctx.bin_dir):
-    arguments += [
-      "-e",
-      "(define gen-path (build-path \"%s\" \"%s\"))" %
-           (ctx.bin_dir.path, src_file.short_path)]
-    arguments += [
-      "-e",
-      "(begin" +
-      "  (make-parent-directory* gen-path) " +
-      "  (make-file-or-directory-link (path->complete-path \"%s\") gen-path))" % src_file.path]
-    arguments += [
-      "-e",
-      "((compile-zos #f #:module? #t) (list gen-path) \"%s\")" % ctx.outputs.zo.dirname]
-
-  ctx.action(
-    executable=ctx.executable._racket_bin,
-    arguments = arguments,
-    inputs=ctx.files.srcs + ctx.files._lib_deps + ctx.files.deps + ctx.files.compile_data + list(zos),
-    outputs=[ctx.outputs.zo],
-  )
+  input_files = ctx.files.srcs + ctx.files._lib_deps + ctx.files.deps + ctx.files.compile_data + list(zos)
+  racket_compile(ctx, src_file, ctx.outputs.zo, input_files)
 
   runfiles_files = set([ctx.outputs.zo])
 

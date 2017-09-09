@@ -69,7 +69,7 @@ def _lib_impl(ctx):
   ctx.action(
     executable=ctx.executable._racket_bin,
     arguments = arguments,
-    inputs=ctx.files.srcs + ctx.files._lib_deps + ctx.files.deps + list(zos),
+    inputs=ctx.files.srcs + ctx.files._lib_deps + ctx.files.deps + ctx.files.compile_data + list(zos),
     outputs=[ctx.outputs.zo],
   )
 
@@ -127,6 +127,10 @@ _racket_lib_attrs = {
   ),
   "deps": attr.label_list(
     providers = ["racket_transitive_zos"],
+  ),
+  "compile_data": attr.label_list(
+    allow_files=True,
+    cfg="data",
   ),
   "_lib_deps": attr.label(
     default=Label("@minimal_racket//osx/v6.10:racket-src-osx"),

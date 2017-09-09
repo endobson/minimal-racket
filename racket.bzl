@@ -1,15 +1,31 @@
 racket_src_file_type = FileType([".rkt"])
 racket_zo_file_type = FileType([".zo"])
 
+# TODO add allowed fields once they are supported.
+RacketInfo = provider()
+
 # Implementation of racket_binary and racket_test rules
 def _bin_impl(ctx):
   script_path = ctx.file.main_module.short_path
+
+  link_files = depset()
+  for target in ctx.attr.deps:
+    link_files += target[RacketInfo].transitive_links
+
+  link_file_expression = "(let ([cur (current-directory)]) (current-library-collection-links (list #f "
+  for link_file in link_files.to_list():
+    link_file_expression += "(build-path cur link-root \"%s\") " % link_file.short_path
+  link_file_expression += ")))"
+
   stub_script = (
     "#!/bin/bash\n" +
     'unset PLTCOMPILEDROOTS\n' +
-    'exec "${BASH_SOURCE[0]}.runfiles/%s/%s" -U ' % (
+    'exec "${BASH_SOURCE[0]}.runfiles/%s/%s" --no-user-path ' % (
        ctx.workspace_name,
        ctx.executable._racket_bin.short_path) +
+    '-l racket/base ' +
+    '-e "(define link-root \\"${BASH_SOURCE[0]}.runfiles/%s\\")" ' % ctx.workspace_name +
+    "-e '%s' " % link_file_expression +
     '-u "${BASH_SOURCE[0]}.runfiles/%s/%s" "$@"\n'% (
        ctx.workspace_name,
        script_path)
@@ -21,23 +37,36 @@ def _bin_impl(ctx):
     executable=True
   )
 
-  runfiles_files = set(ctx.attr._lib_deps.files)
+  runfiles_files = depset(ctx.attr._lib_deps.files)
 
   for target in ctx.attr.deps:
-    runfiles_files = runfiles_files | target.racket_transitive_zos
+    runfiles_files += target[RacketInfo].transitive_zos
+    runfiles_files += target[RacketInfo].transitive_links
 
   runfiles = ctx.runfiles(
     transitive_files=runfiles_files,
     collect_data=True,
   )
 
-  return struct(runfiles=runfiles)
+  return [
+    DefaultInfo(
+      runfiles = runfiles
+    ),
+  ]
 
-def racket_compile(ctx, src_file, output_file, inputs):
+def racket_compile(ctx, src_file, output_file, link_files, inputs):
   arguments = []
+  arguments += ["--no-user-path"]
   arguments += ["-l", "racket/base"]
   arguments += ["-l", "racket/file"]
   arguments += ["-l", "compiler/compiler"]
+
+  link_file_expression = "(let ([cur (current-directory)]) (current-library-collection-links (list #f "
+  for link_file in link_files.to_list():
+    link_file_expression += "(build-path cur \"%s\") " % link_file.path
+  link_file_expression += ")))"
+  arguments += ["-e", link_file_expression]
+
   # The file needs to be in the same directory as the .zos because thats how the racket compiler works.
   if (src_file.root != ctx.bin_dir):
     arguments += [
@@ -77,12 +106,20 @@ def _lib_impl(ctx):
   if (not(src_name.rpartition(".rkt")[0] == ctx.label.name)):
     fail("Source file must match rule name", "srcs")
 
-  zos = set()
+  transitive_zos = depset()
+  transitive_links = depset()
   for target in ctx.attr.deps:
-    zos = zos | set(target.racket_transitive_zos)
+    transitive_zos += target[RacketInfo].transitive_zos
+    transitive_links += target[RacketInfo].transitive_links
 
-  input_files = ctx.files.srcs + ctx.files._lib_deps + ctx.files.deps + ctx.files.compile_data + list(zos)
-  racket_compile(ctx, src_file, ctx.outputs.zo, input_files)
+  input_files = ctx.files.srcs + ctx.files._lib_deps + ctx.files.deps + ctx.files.compile_data + list(transitive_zos) + list(transitive_links)
+  racket_compile(
+    ctx,
+    src_file = src_file,
+    output_file = ctx.outputs.zo,
+    link_files = transitive_links,
+    inputs = input_files,
+  )
 
   runfiles_files = set([ctx.outputs.zo])
 
@@ -92,16 +129,40 @@ def _lib_impl(ctx):
   for target in ctx.attr.deps:
     runfiles_files = runfiles_files | set(target.files)
 
-
   runfiles = ctx.runfiles(
     transitive_files=runfiles_files,
     collect_data=True,
   )
 
-  return struct(
-    racket_transitive_zos=list(zos) + [ctx.outputs.zo],
-    runfiles=runfiles
+  return [
+    DefaultInfo(
+      runfiles = runfiles
+    ),
+    RacketInfo(
+      transitive_zos = transitive_zos + depset([ctx.outputs.zo]),
+      transitive_links = transitive_links
+    )
+  ]
+
+def _collection_impl(ctx):
+  ctx.actions.write(
+    output = ctx.outputs.links,
+    content = "((\"%s\" \".\"))" % ctx.attr.name,
   )
+
+  transitive_zos = depset()
+  transitive_links = depset()
+
+  for target in ctx.attr.deps:
+    transitive_zos += target[RacketInfo].transitive_zos
+    transitive_links += target[RacketInfo].transitive_links
+
+  return [
+    RacketInfo(
+      transitive_zos = transitive_zos,
+      transitive_links = transitive_links + depset([ctx.outputs.links]),
+    ),
+  ]
 
 _racket_bin_attrs = {
   "main_module": attr.label(
@@ -137,7 +198,7 @@ _racket_lib_attrs = {
     cfg="data",
   ),
   "deps": attr.label_list(
-    providers = ["racket_transitive_zos"],
+    providers = [RacketInfo],
   ),
   "compile_data": attr.label_list(
     allow_files=True,
@@ -154,6 +215,13 @@ _racket_lib_attrs = {
     cfg="host",
   ),
 }
+
+_racket_collection_attrs = {
+  "deps": attr.label_list(
+    providers = [RacketInfo],
+  ),
+}
+
 
 racket_test = rule(
   implementation=_bin_impl,
@@ -174,4 +242,12 @@ racket_library = rule(
     "zo": "compiled/%{name}_rkt.zo",
   },
   attrs = _racket_lib_attrs
+)
+
+racket_collection = rule(
+  implementation = _collection_impl,
+  outputs = {
+    "links": "%{name}_links.rktd",
+  },
+  attrs = _racket_collection_attrs,
 )

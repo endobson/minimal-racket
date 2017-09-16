@@ -1,4 +1,4 @@
-export_files(["releases.bzl", "racket.bzl"])
+exports_files(["releases.bzl", "racket.bzl"])
 
 genrule(
   name = "libc-deb",

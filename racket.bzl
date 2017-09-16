@@ -37,7 +37,7 @@ def _bin_impl(ctx):
     executable=True
   )
 
-  runfiles_files = depset(ctx.attr._lib_deps.files)
+  runfiles_files = ctx.attr._core_racket.files
 
   for target in ctx.attr.deps:
     runfiles_files += target[RacketInfo].transitive_zos
@@ -57,42 +57,29 @@ def _bin_impl(ctx):
 def racket_compile(ctx, src_file, output_file, link_files, inputs):
   arguments = []
   arguments += ["--no-user-path"]
-  arguments += ["-l", "racket/base"]
-  arguments += ["-l", "racket/file"]
-  arguments += ["-l", "compiler/compiler"]
 
-  link_file_expression = "(let ([cur (current-directory)]) (current-library-collection-links (list #f "
-  for link_file in link_files.to_list():
-    link_file_expression += "(build-path cur \"%s\") " % link_file.path
-  link_file_expression += ")))"
+  links = ctx.attr._bazel_tools[RacketInfo].transitive_links.to_list()
+  if (len(links) != 1):
+    fail("Only expecting one link in tools")
+  link_file_expression = (
+    '(current-library-collection-links (list #f (build-path (current-directory) "%s")))'
+    % links[0].path)
+
   arguments += ["-e", link_file_expression]
-
-  # The file needs to be in the same directory as the .zos because thats how the racket compiler works.
-  if (src_file.root != ctx.bin_dir):
-    arguments += [
-      "-e",
-      "(define gen-path (build-path \"%s\" \"%s\"))" %
-           (ctx.bin_dir.path, src_file.short_path)]
-    arguments += [
-      "-e",
-      "(define src-path gen-path)"]
-    arguments += [
-      "-e",
-      "(begin" +
-      "  (make-parent-directory* gen-path) " +
-      "  (make-file-or-directory-link (path->complete-path \"%s\") gen-path))" % src_file.path]
-  else:
-    arguments += [
-      "-e",
-      "(define src-path \"%s\")" % src_file.path]
-  arguments += [
-    "-e",
-    "((compile-zos #f #:module? #t) (list src-path) \"%s\")" % output_file.dirname]
+  arguments += ["-l", "bazel-tools/racket-compiler"]
+  arguments += ["--"]
+  arguments += ["--links", 
+                "(" + " ".join(['"%s"' % link_file.path for link_file in link_files.to_list()]) + ")"]
+  arguments += ["--file", '("%s" "%s" "%s")' % (src_file.path, src_file.short_path, src_file.root.path)]
+  arguments += ["--bin_dir", ctx.bin_dir.path]
+  arguments += ["--output_dir", output_file.dirname]
 
   ctx.action(
-    executable=ctx.executable._racket_bin,
+    executable = ctx.executable._racket_bin,
     arguments = arguments,
-    inputs=inputs,
+    inputs = (inputs + ctx.attr._core_racket.files +
+       ctx.attr._bazel_tools[RacketInfo].transitive_zos +
+       ctx.attr._bazel_tools[RacketInfo].transitive_links) ,
     outputs=[output_file],
   )
 
@@ -112,7 +99,7 @@ def _lib_impl(ctx):
     transitive_zos += target[RacketInfo].transitive_zos
     transitive_links += target[RacketInfo].transitive_links
 
-  input_files = ctx.files.srcs + ctx.files._lib_deps + ctx.files.deps + ctx.files.compile_data + list(transitive_zos) + list(transitive_links)
+  input_files = depset(ctx.files.srcs) + transitive_zos + transitive_links
   racket_compile(
     ctx,
     src_file = src_file,
@@ -121,13 +108,13 @@ def _lib_impl(ctx):
     inputs = input_files,
   )
 
-  runfiles_files = set([ctx.outputs.zo])
+  runfiles_files = depset([ctx.outputs.zo])
 
   for target in ctx.attr.data:
-    runfiles_files = runfiles_files | set(target.files)
+    runfiles_files = runfiles_files | depset(target.files)
 
   for target in ctx.attr.deps:
-    runfiles_files = runfiles_files | set(target.files)
+    runfiles_files = runfiles_files | depset(target.files)
 
   runfiles = ctx.runfiles(
     transitive_files=runfiles_files,
@@ -141,6 +128,55 @@ def _lib_impl(ctx):
     RacketInfo(
       transitive_zos = transitive_zos + depset([ctx.outputs.zo]),
       transitive_links = transitive_links
+    )
+  ]
+
+def _bootstrap_lib_impl(ctx):
+  if (len(ctx.attr.srcs) != 1):
+    fail("Must supply exactly one source file: Got %s" % len(ctx.attr.srcs), "srcs")
+  src_file = ctx.files.srcs[0]
+  src_name = src_file.basename
+  if (not(src_name.endswith(".rkt"))):
+    fail("Source file must end in .rkt", "srcs")
+  if (not(src_name.rpartition(".rkt")[0] == ctx.label.name)):
+    fail("Source file must match rule name", "srcs")
+
+  arguments = []
+  arguments += ["--no-user-path"]
+  arguments += ["-l", "racket/base"]
+  arguments += ["-l", "racket/file"]
+  arguments += ["-l", "compiler/compiler"]
+
+  if (src_file.root == ctx.bin_dir):
+    fail("bootstrap_racket_lib doesn't support generated files")
+  # The file needs to be in the same directory as the .zos because thats how the racket compiler works.
+  arguments += [
+    "-e",
+    "(define gen-path (build-path \"%s\" \"%s\"))" %
+         (ctx.bin_dir.path, src_file.short_path)]
+  arguments += [
+    "-e",
+    "(define src-path gen-path)"]
+  arguments += [
+    "-e",
+    "(begin" +
+    "  (make-parent-directory* gen-path) " +
+    "  (make-file-or-directory-link (path->complete-path \"%s\") gen-path))" % src_file.path]
+  arguments += [
+    "-e",
+    "((compile-zos #f #:module? #t) (list src-path) \"%s\")" % ctx.outputs.zo.dirname]
+
+  ctx.action(
+    executable=ctx.executable._racket_bin,
+    arguments = arguments,
+    inputs= ctx.files.srcs + ctx.files._core_racket,
+    outputs=[ctx.outputs.zo],
+  )
+
+  return [
+    RacketInfo(
+      transitive_zos = depset([ctx.outputs.zo]),
+      transitive_links = depset([])
     )
   ]
 
@@ -175,7 +211,7 @@ _racket_bin_attrs = {
     cfg="data",
   ),
   "deps": attr.label_list(allow_files=racket_zo_file_type),
-  "_lib_deps": attr.label(
+  "_core_racket": attr.label(
     default=Label("@minimal_racket//osx/v6.10:racket-src-osx"),
     cfg="data"
   ),
@@ -200,11 +236,29 @@ _racket_lib_attrs = {
   "deps": attr.label_list(
     providers = [RacketInfo],
   ),
-  "compile_data": attr.label_list(
-    allow_files=True,
-    cfg="data",
+  "_core_racket": attr.label(
+    default=Label("@minimal_racket//osx/v6.10:racket-src-osx"),
+    cfg="host"
   ),
-  "_lib_deps": attr.label(
+  "_racket_bin": attr.label(
+    default=Label("@minimal_racket//osx/v6.10:bin/racket"),
+    executable=True,
+    allow_files=True,
+    cfg="host",
+  ),
+  "_bazel_tools": attr.label(
+    default=Label("@minimal_racket//build_rules:bazel-tools"),
+    cfg="host",
+  ),
+}
+
+_racket_bootstrap_lib_attrs = {
+  "srcs": attr.label_list(
+    allow_files=racket_src_file_type,
+    mandatory=True,
+    non_empty=True
+  ),
+  "_core_racket": attr.label(
     default=Label("@minimal_racket//osx/v6.10:racket-src-osx"),
     cfg="host"
   ),
@@ -215,6 +269,7 @@ _racket_lib_attrs = {
     cfg="host",
   ),
 }
+
 
 _racket_collection_attrs = {
   "deps": attr.label_list(
@@ -244,6 +299,14 @@ racket_library = rule(
   attrs = _racket_lib_attrs
 )
 
+bootstrap_racket_library = rule(
+  implementation=_bootstrap_lib_impl,
+  outputs = {
+    "zo": "compiled/%{name}_rkt.zo",
+  },
+  attrs = _racket_bootstrap_lib_attrs
+)
+  
 racket_collection = rule(
   implementation = _collection_impl,
   outputs = {

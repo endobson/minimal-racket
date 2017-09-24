@@ -14,19 +14,20 @@ def _bin_impl(ctx):
 
   link_file_expression = "(let ([cur (current-directory)]) (current-library-collection-links (list #f "
   for link_file in link_files.to_list():
-    link_file_expression += "(build-path cur link-root \"%s\") " % link_file.short_path
+    link_file_expression += "(build-path (if (absolute-path? link-root) link-root (build-path cur link-root)) \"%s\") " % link_file.short_path
   link_file_expression += ")))"
 
   stub_script = (
     "#!/bin/bash\n" +
     'unset PLTCOMPILEDROOTS\n' +
-    'exec "${BASH_SOURCE[0]}.runfiles/%s/%s" --no-user-path ' % (
+    'RUNFILES="$(readlink "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}").runfiles"\n' +
+    'exec "$RUNFILES/%s/%s" --no-user-path ' % (
        ctx.workspace_name,
        ctx.executable._racket_bin.short_path) +
     '-l racket/base ' +
-    '-e "(define link-root \\"${BASH_SOURCE[0]}.runfiles/%s\\")" ' % ctx.workspace_name +
+    '-e "(define link-root \\"$RUNFILES/%s\\")" ' % ctx.workspace_name +
     "-e '%s' " % link_file_expression +
-    '-u "${BASH_SOURCE[0]}.runfiles/%s/%s" "$@"\n'% (
+    '-u "$RUNFILES/%s/%s" "$@"\n'% (
        ctx.workspace_name,
        script_path)
   )
@@ -248,6 +249,7 @@ _racket_lib_attrs = {
   ),
   "_bazel_tools": attr.label(
     default=Label("@minimal_racket//build_rules:bazel-tools"),
+    providers = [RacketInfo],
     cfg="host",
   ),
 }

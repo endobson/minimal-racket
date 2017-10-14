@@ -5,16 +5,17 @@
   (require
     racket/cmdline
     racket/file
+    racket/string
     compiler/compiler
     racket/match)
-  
+
   (define links-arg #f)
   (define file-arg #f)
   (define bin-dir-arg #f)
   (define output-dir-arg #f)
-  
+
   (command-line
-    #:once-each 
+    #:once-each
     [("--links") links "Link files"
      (set! links-arg links)]
     [("--file") file "Source file tuple"
@@ -23,14 +24,14 @@
      (set! bin-dir-arg directory)]
     [("--output_dir") directory "Output directory"
      (set! output-dir-arg directory)])
-  
+
   ;; Setup collection-links
   (define cwd (current-directory))
   (define links
     (read (open-input-string links-arg)))
-  (current-library-collection-links 
+  (current-library-collection-links
     (cons #f (map (lambda (p) (build-path cwd p)) links)))
-  
+
   ;; Determine source files
   (define bin-dir-path
     (if (equal? bin-dir-arg "")
@@ -47,9 +48,13 @@
              (build-path cwd root)))
        (if (equal? root-path bin-dir-path)
            path
-           (let ([gen-path (build-path bin-dir-path short-path)])
+           (let ([gen-path
+                   ;; TODO(endobson) fix this when there is a less hacky way.
+                   (if (string-prefix? path "external/")
+                       (build-path bin-dir-path path)
+                       (build-path bin-dir-path short-path))])
              (make-parent-directory* gen-path)
              (make-file-or-directory-link (path->complete-path path) gen-path)
              gen-path))]))
-  
+
   ((compile-zos #f #:module? #t) (list source-path) output-dir-arg))

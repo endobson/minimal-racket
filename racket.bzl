@@ -1,3 +1,8 @@
+load(
+    "@io_bazel_rules_docker//lang:image.bzl",
+    "dep_layer",
+)
+
 racket_src_file_type = FileType([".rkt"])
 racket_zo_file_type = FileType([".zo"])
 
@@ -201,6 +206,20 @@ def _collection_impl(ctx):
     ),
   ]
 
+def _bundle_impl(ctx):
+  transitive_zos = depset()
+  transitive_links = depset()
+
+  for target in ctx.attr.deps:
+    transitive_zos += target[RacketInfo].transitive_zos
+    transitive_links += target[RacketInfo].transitive_links
+
+  runfiles = ctx.runfiles(
+    transitive_files = transitive_zos + transitive_links
+  )
+
+  return [DefaultInfo(default_runfiles=runfiles)]
+
 _racket_bin_attrs = {
   "main_module": attr.label(
     mandatory=True,
@@ -279,6 +298,11 @@ _racket_collection_attrs = {
   ),
 }
 
+_racket_bundle_attrs = {
+  "deps": attr.label_list(
+    providers = [RacketInfo],
+  ),
+}
 
 racket_test = rule(
   implementation=_bin_impl,
@@ -316,3 +340,25 @@ racket_collection = rule(
   },
   attrs = _racket_collection_attrs,
 )
+
+_racket_bundle = rule(
+  implementation = _bundle_impl,
+  attrs = _racket_bundle_attrs
+)
+
+def racket_image(name, main_module, workspace_name, 
+                 deps = [], base = "@minimal_racket//linux:minimal_racket"):
+  deps_bundle_name = name + "-deps"
+  
+  _racket_bundle(
+    name = deps_bundle_name,
+    deps = deps
+  )
+   
+  dep_layer(
+    name = name,
+    dep = deps_bundle_name,
+    entrypoint = ["/racket/bin/racket", "-u", "/app/%s/%s/%s" %
+                  (workspace_name, native.package_name(), main_module)],
+    base = base,
+  )

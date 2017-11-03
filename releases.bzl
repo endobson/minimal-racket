@@ -36,6 +36,12 @@ def racket_releases():
   )
 
   native.http_file(
+    name = "racket_minimal_x86_64_6_10_linux",
+    url = "https://download.racket-lang.org/releases/6.10/installers/racket-minimal-6.10-x86_64-linux.tgz",
+    sha256 = "ec637452e61da727c9ac72c6c3d27b9e42dccae11c412c7d48f2de6376e724a9"
+  )
+
+  native.http_file(
     name = "racket_minimal_x86_64_6_10_1_linux",
     url = "https://download.racket-lang.org/releases/6.10.1/installers/racket-minimal-6.10.1-x86_64-linux.tgz",
     sha256 = "9fc37904923c99577d763e98e0563c2e24a33e287052403b4692345d3e4917d6",

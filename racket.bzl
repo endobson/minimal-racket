@@ -1,7 +1,8 @@
-load(
-    "@io_bazel_rules_docker//lang:image.bzl",
-    "dep_layer",
-)
+# TODO Re-enable docker image support
+# load(
+#     "@io_bazel_rules_docker//lang:image.bzl",
+#     "dep_layer",
+# )
 
 racket_src_file_type = FileType([".rkt"])
 racket_zo_file_type = FileType([".zo"])
@@ -74,7 +75,7 @@ def racket_compile(ctx, src_file, output_file, link_files, inputs):
   arguments += ["-e", link_file_expression]
   arguments += ["-l", "bazel-tools/racket-compiler"]
   arguments += ["--"]
-  arguments += ["--links", 
+  arguments += ["--links",
                 "(" + " ".join(['"%s"' % link_file.path for link_file in link_files.to_list()]) + ")"]
   arguments += ["--file", '("%s" "%s" "%s")' % (src_file.path, src_file.short_path, src_file.root.path)]
   arguments += ["--bin_dir", ctx.bin_dir.path]
@@ -332,7 +333,7 @@ bootstrap_racket_library = rule(
   },
   attrs = _racket_bootstrap_lib_attrs
 )
-  
+
 racket_collection = rule(
   implementation = _collection_impl,
   outputs = {
@@ -346,19 +347,20 @@ _racket_bundle = rule(
   attrs = _racket_bundle_attrs
 )
 
-def racket_image(name, main_module, workspace_name, 
-                 deps = [], base = "@minimal_racket//linux:minimal_racket"):
-  deps_bundle_name = name + "-deps"
-  
-  _racket_bundle(
-    name = deps_bundle_name,
-    deps = deps
-  )
-   
-  dep_layer(
-    name = name,
-    dep = deps_bundle_name,
-    entrypoint = ["/racket/bin/racket", "-u", "/app/%s/%s/%s" %
-                  (workspace_name, native.package_name(), main_module)],
-    base = base,
-  )
+# TODO Re-enable docker image support
+# def racket_image(name, main_module, workspace_name,
+#                  deps = [], base = "@minimal_racket//linux:minimal_racket"):
+#   deps_bundle_name = name + "-deps"
+#
+#   _racket_bundle(
+#     name = deps_bundle_name,
+#     deps = deps
+#   )
+#
+#   dep_layer(
+#     name = name,
+#     dep = deps_bundle_name,
+#     entrypoint = ["/racket/bin/racket", "-u", "/app/%s/%s/%s" %
+#                   (workspace_name, native.package_name(), main_module)],
+#     base = base,
+#   )

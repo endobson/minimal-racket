@@ -221,6 +221,9 @@ def _bundle_impl(ctx):
 
   return [DefaultInfo(default_runfiles=runfiles)]
 
+_osx_core_racket = "@minimal_racket//osx/v6.12:racket-src-osx"
+_osx_racket_bin ="@minimal_racket//osx/v6.12:bin/racket"
+
 _racket_bin_attrs = {
   "main_module": attr.label(
     mandatory=True,
@@ -233,11 +236,11 @@ _racket_bin_attrs = {
   ),
   "deps": attr.label_list(allow_files=racket_zo_file_type),
   "_core_racket": attr.label(
-    default=Label("@minimal_racket//osx/v6.10:racket-src-osx"),
+    default=Label(_osx_core_racket),
     cfg="data"
   ),
   "_racket_bin": attr.label(
-    default=Label("@minimal_racket//osx/v6.10:bin/racket"),
+    default=Label(_osx_racket_bin),
     executable=True,
     allow_files=True,
     cfg="data"
@@ -258,11 +261,11 @@ _racket_lib_attrs = {
     providers = [RacketInfo],
   ),
   "_core_racket": attr.label(
-    default=Label("@minimal_racket//osx/v6.10:racket-src-osx"),
+    default=Label(_osx_core_racket),
     cfg="host"
   ),
   "_racket_bin": attr.label(
-    default=Label("@minimal_racket//osx/v6.10:bin/racket"),
+    default=Label(_osx_racket_bin),
     executable=True,
     allow_files=True,
     cfg="host",
@@ -281,11 +284,11 @@ _racket_bootstrap_lib_attrs = {
     non_empty=True
   ),
   "_core_racket": attr.label(
-    default=Label("@minimal_racket//osx/v6.10:racket-src-osx"),
+    default=Label(_osx_core_racket),
     cfg="host"
   ),
   "_racket_bin": attr.label(
-    default=Label("@minimal_racket//osx/v6.10:bin/racket"),
+    default=Label(_osx_racket_bin),
     executable=True,
     allow_files=True,
     cfg="host",

@@ -47,6 +47,12 @@ def racket_releases():
     sha256 = "9fc37904923c99577d763e98e0563c2e24a33e287052403b4692345d3e4917d6",
   )
 
+  native.http_file(
+    name = "racket_minimal_x86_64_6_12_osx",
+    url = "http://mirror.racket-lang.org/installers/6.12/racket-minimal-6.12-x86_64-macosx.tgz",
+    sha256 = "c22fcab24049ca6e36b7ced8185429f34851cf9860c0a1d95b6b63c363802ad5"
+  )
+
 def rackunit_releases():
   native.http_file(
     name = "racket_rackunit_lib_6_4",

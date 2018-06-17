@@ -221,8 +221,8 @@ def _bundle_impl(ctx):
 
   return [DefaultInfo(default_runfiles=runfiles)]
 
-_osx_core_racket = "@minimal_racket//osx/v6.90:racket-src-osx"
-_osx_racket_bin ="@minimal_racket//osx/v6.90:bin/racket"
+_osx_core_racket = "@minimal_racket//osx/v6.12:racket-src-osx"
+_osx_racket_bin ="@minimal_racket//osx/v6.12:bin/racket"
 
 _racket_bin_attrs = {
   "main_module": attr.label(

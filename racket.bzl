@@ -209,20 +209,6 @@ def _collection_impl(ctx):
     ),
   ]
 
-def _bundle_impl(ctx):
-  transitive_zos = depset()
-  transitive_links = depset()
-
-  for target in ctx.attr.deps:
-    transitive_zos += target[RacketInfo].transitive_zos
-    transitive_links += target[RacketInfo].transitive_links
-
-  runfiles = ctx.runfiles(
-    transitive_files = transitive_zos + transitive_links
-  )
-
-  return [DefaultInfo(default_runfiles=runfiles)]
-
 _osx_core_racket = "@minimal_racket//osx/v6.12:racket-src-osx"
 _osx_racket_bin ="@minimal_racket//osx/v6.12:bin/racket"
 
@@ -344,26 +330,3 @@ racket_collection = rule(
   },
   attrs = _racket_collection_attrs,
 )
-
-_racket_bundle = rule(
-  implementation = _bundle_impl,
-  attrs = _racket_bundle_attrs
-)
-
-# TODO Re-enable docker image support
-# def racket_image(name, main_module, workspace_name,
-#                  deps = [], base = "@minimal_racket//linux:minimal_racket"):
-#   deps_bundle_name = name + "-deps"
-#
-#   _racket_bundle(
-#     name = deps_bundle_name,
-#     deps = deps
-#   )
-#
-#   dep_layer(
-#     name = name,
-#     dep = deps_bundle_name,
-#     entrypoint = ["/racket/bin/racket", "-u", "/app/%s/%s/%s" %
-#                   (workspace_name, native.package_name(), main_module)],
-#     base = base,
-#   )

@@ -232,18 +232,17 @@ _racket_bin_attrs = {
   ),
   "data": attr.label_list(
     allow_files=True,
-    cfg="data",
   ),
   "deps": attr.label_list(allow_files=racket_zo_file_extensions),
   "_core_racket": attr.label(
     default=Label(_osx_core_racket),
-    cfg="data"
+    cfg="host"
   ),
   "_racket_bin": attr.label(
     default=Label(_osx_racket_bin),
     executable=True,
     allow_files=True,
-    cfg="data"
+    cfg="host"
   ),
 }
 
@@ -255,7 +254,6 @@ _racket_lib_attrs = {
   ),
   "data": attr.label_list(
     allow_files=True,
-    cfg="data",
   ),
   "deps": attr.label_list(
     providers = [RacketInfo],

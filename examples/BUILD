@@ -1,7 +1,5 @@
 load("@minimal_racket//:racket.bzl",
      "racket_binary", "racket_library", "racket_test")
-load("@io_bazel_rules_docker//docker:docker.bzl", "docker_image",)
-load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_tar")
 
 racket_library(
     name = "lib1",
@@ -45,13 +43,3 @@ racket_binary(
         ":hello-world-server",
     ]
 )
-
-# TODO Re-enable docker image support
-# racket_image(
-#     name = "hello-world-server-image",
-#     main_module = "hello-world-server.rkt",
-#     workspace_name = "minimal_racket",
-#     deps = [
-#       ":hello-world-server",
-#     ]
-# )

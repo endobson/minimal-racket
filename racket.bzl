@@ -1,14 +1,7 @@
-# TODO Re-enable docker image support
-# load(
-#     "@io_bazel_rules_docker//lang:image.bzl",
-#     "dep_layer",
-# )
-
 racket_src_file_extensions = [".rkt"]
 racket_zo_file_extensions = [".zo"]
 
-# TODO add allowed fields once they are supported.
-RacketInfo = provider()
+RacketInfo = provider(fields=["transitive_zos", "transitive_links"])
 
 # Implementation of racket_binary and racket_test rules
 def _bin_impl(ctx):

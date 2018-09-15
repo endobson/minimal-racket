@@ -38,10 +38,10 @@ def _bin_impl(ctx):
        script_path)
   )
 
-  ctx.file_action(
+  ctx.actions.write(
     output=ctx.outputs.executable,
     content=stub_script,
-    executable=True
+    is_executable=True
   )
 
   runfiles_files = ctx.attr._core_racket.files
@@ -81,12 +81,12 @@ def racket_compile(ctx, src_file, output_file, link_files, inputs):
   arguments += ["--bin_dir", ctx.bin_dir.path]
   arguments += ["--output_dir", output_file.dirname]
 
-  ctx.action(
+  ctx.actions.run(
     executable = ctx.executable._racket_bin,
     arguments = arguments,
     inputs = (inputs + ctx.attr._core_racket.files +
        ctx.attr._bazel_tools[RacketInfo].transitive_zos +
-       ctx.attr._bazel_tools[RacketInfo].transitive_links) ,
+       ctx.attr._bazel_tools[RacketInfo].transitive_links),
     outputs=[output_file],
   )
 
@@ -173,7 +173,7 @@ def _bootstrap_lib_impl(ctx):
     "-e",
     "((compile-zos #f #:module? #t) (list src-path) \"%s\")" % ctx.outputs.zo.dirname]
 
-  ctx.action(
+  ctx.actions.run(
     executable=ctx.executable._racket_bin,
     arguments = arguments,
     inputs= ctx.files.srcs + ctx.files._core_racket,

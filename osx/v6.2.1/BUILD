@@ -1,4 +1,4 @@
-load("files", "V621_OSX_FILES")
+load(":files.bzl", "V621_OSX_FILES")
 genrule(
   name = "racket-src-osx",
   visibility = ["//visibility:public"],

@@ -1,6 +1,6 @@
-load("files", "V66_OSX_ZOS")
-load("files", "V66_OSX_BINARIES")
-load("files", "RACKUNIT_FILES")
+load(":files.bzl", "V66_OSX_ZOS")
+load(":files.bzl", "V66_OSX_BINARIES")
+load(":files.bzl", "RACKUNIT_FILES")
 genrule(
   name = "racket-src-osx",
   visibility = ["//visibility:public"],

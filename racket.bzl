@@ -4,8 +4,8 @@
 #     "dep_layer",
 # )
 
-racket_src_file_type = FileType([".rkt"])
-racket_zo_file_type = FileType([".zo"])
+racket_src_file_extensions = [".rkt"]
+racket_zo_file_extensions = [".zo"]
 
 # TODO add allowed fields once they are supported.
 RacketInfo = provider()
@@ -228,13 +228,13 @@ _racket_bin_attrs = {
   "main_module": attr.label(
     mandatory=True,
     single_file=True,
-    allow_files=racket_src_file_type,
+    allow_files=racket_src_file_extensions,
   ),
   "data": attr.label_list(
     allow_files=True,
     cfg="data",
   ),
-  "deps": attr.label_list(allow_files=racket_zo_file_type),
+  "deps": attr.label_list(allow_files=racket_zo_file_extensions),
   "_core_racket": attr.label(
     default=Label(_osx_core_racket),
     cfg="data"
@@ -249,7 +249,7 @@ _racket_bin_attrs = {
 
 _racket_lib_attrs = {
   "srcs": attr.label_list(
-    allow_files=racket_src_file_type,
+    allow_files=racket_src_file_extensions,
     mandatory=True,
     non_empty=True
   ),
@@ -279,7 +279,7 @@ _racket_lib_attrs = {
 
 _racket_bootstrap_lib_attrs = {
   "srcs": attr.label_list(
-    allow_files=racket_src_file_type,
+    allow_files=racket_src_file_extensions,
     mandatory=True,
     non_empty=True
   ),

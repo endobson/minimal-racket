@@ -201,8 +201,7 @@ _osx_racket_bin ="@minimal_racket//osx/v6.12:bin/racket"
 _racket_bin_attrs = {
   "main_module": attr.label(
     mandatory=True,
-    single_file=True,
-    allow_files=racket_src_file_extensions,
+    allow_single_file=racket_src_file_extensions,
   ),
   "data": attr.label_list(
     allow_files=True,
@@ -224,7 +223,7 @@ _racket_lib_attrs = {
   "srcs": attr.label_list(
     allow_files=racket_src_file_extensions,
     mandatory=True,
-    non_empty=True
+    allow_empty=False
   ),
   "data": attr.label_list(
     allow_files=True,
@@ -253,7 +252,7 @@ _racket_bootstrap_lib_attrs = {
   "srcs": attr.label_list(
     allow_files=racket_src_file_extensions,
     mandatory=True,
-    non_empty=True
+    allow_empty=False
   ),
   "_core_racket": attr.label(
     default=Label(_osx_core_racket),

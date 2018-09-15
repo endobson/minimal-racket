@@ -58,9 +58,6 @@ def _bin_impl(ctx):
   ]
 
 def racket_compile(ctx, src_file, output_file, link_files, inputs):
-  arguments = []
-  arguments += ["--no-user-path"]
-
   links = ctx.attr._bazel_tools[RacketInfo].transitive_links.to_list()
   if (len(links) != 1):
     fail("Only expecting one link in tools")
@@ -68,18 +65,20 @@ def racket_compile(ctx, src_file, output_file, link_files, inputs):
     '(current-library-collection-links (list #f (build-path (current-directory) "%s")))'
     % links[0].path)
 
-  arguments += ["-e", link_file_expression]
-  arguments += ["-l", "bazel-tools/racket-compiler"]
-  arguments += ["--"]
-  arguments += ["--links",
-                "(" + " ".join(['"%s"' % link_file.path for link_file in link_files.to_list()]) + ")"]
-  arguments += ["--file", '("%s" "%s" "%s")' % (src_file.path, src_file.short_path, src_file.root.path)]
-  arguments += ["--bin_dir", ctx.bin_dir.path]
-  arguments += ["--output_dir", output_file.dirname]
+  args = ctx.actions.args()
+  args.add("--no-user-path")
+  args.add_all(["-e", link_file_expression])
+  args.add_all(["-l", "bazel-tools/racket-compiler"])
+  args.add("--")
+  args.add("--links")
+  args.add_joined(link_files, format_each='"%s"', join_with=" ", format_joined="(%s)", omit_if_empty=False)
+  args.add_all(["--file", '("%s" "%s" "%s")' % (src_file.path, src_file.short_path, src_file.root.path)])
+  args.add_all(["--bin_dir", ctx.bin_dir.path])
+  args.add_all(["--output_dir", output_file.dirname])
 
   ctx.actions.run(
     executable = ctx.executable._racket_bin,
-    arguments = arguments,
+    arguments = [args],
     inputs = depset(
       transitive = [inputs,
                     ctx.attr._core_racket.files,
@@ -144,34 +143,35 @@ def _bootstrap_lib_impl(ctx):
   if (not(src_name.rpartition(".rkt")[0] == ctx.label.name)):
     fail("Source file must match rule name", "srcs")
 
-  arguments = []
-  arguments += ["--no-user-path"]
-  arguments += ["-l", "racket/base"]
-  arguments += ["-l", "racket/file"]
-  arguments += ["-l", "compiler/compiler"]
+  args = ctx.actions.args()
+
+  args.add("--no-user-path")
+  args.add_all(["-l", "racket/base"])
+  args.add_all(["-l", "racket/file"])
+  args.add_all(["-l", "compiler/compiler"])
 
   if (src_file.root == ctx.bin_dir):
     fail("bootstrap_racket_lib doesn't support generated files")
   # The file needs to be in the same directory as the .zos because thats how the racket compiler works.
-  arguments += [
+  args.add_all([
     "-e",
     "(define gen-path (build-path \"%s\" \"%s\"))" %
-         (ctx.bin_dir.path, src_file.short_path)]
-  arguments += [
+         (ctx.bin_dir.path, src_file.short_path)])
+  args.add_all([
     "-e",
-    "(define src-path gen-path)"]
-  arguments += [
+    "(define src-path gen-path)"])
+  args.add_all([
     "-e",
     "(begin" +
     "  (make-parent-directory* gen-path) " +
-    "  (make-file-or-directory-link (path->complete-path \"%s\") gen-path))" % src_file.path]
-  arguments += [
+    "  (make-file-or-directory-link (path->complete-path \"%s\") gen-path))" % src_file.path])
+  args.add_all([
     "-e",
-    "((compile-zos #f #:module? #t) (list src-path) \"%s\")" % ctx.outputs.zo.dirname]
+    "((compile-zos #f #:module? #t) (list src-path) \"%s\")" % ctx.outputs.zo.dirname])
 
   ctx.actions.run(
     executable=ctx.executable._racket_bin,
-    arguments = arguments,
+    arguments = [args],
     inputs= ctx.files.srcs + ctx.files._core_racket,
     tools = [ctx.executable._racket_bin],
     outputs=[ctx.outputs.zo],

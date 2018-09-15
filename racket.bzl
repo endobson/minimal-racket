@@ -87,6 +87,7 @@ def racket_compile(ctx, src_file, output_file, link_files, inputs):
     inputs = (inputs + ctx.attr._core_racket.files +
        ctx.attr._bazel_tools[RacketInfo].transitive_zos +
        ctx.attr._bazel_tools[RacketInfo].transitive_links),
+    tools = [ctx.executable._racket_bin],
     outputs=[output_file],
   )
 
@@ -177,6 +178,7 @@ def _bootstrap_lib_impl(ctx):
     executable=ctx.executable._racket_bin,
     arguments = arguments,
     inputs= ctx.files.srcs + ctx.files._core_racket,
+    tools = [ctx.executable._racket_bin],
     outputs=[ctx.outputs.zo],
   )
 

@@ -54,10 +54,11 @@ def racket_releases():
   )
 
   native.http_file(
-    name = "racket_minimal_x86_64_6_90_osx",
-    url = "http://pre-release.racket-lang.org/installers/racket-minimal-6.90.0.900-x86_64-macosx.tgz",
-    sha256 = "f7a593755c6eb68d5797ab861eb788cfd01dce9630bb65c77e2b960c3106edf0"
+    name = "racket_minimal_x86_64_7_0_osx",
+    url = "https://download.racket-lang.org/releases/7.0/installers/racket-minimal-7.0-x86_64-macosx.tgz",
+    sha256 = "128437e775e95db02aaa857c8b06bbb2ee9409bf2f7935f06659de6316a4d6d4"
   )
+
 
 def rackunit_releases():
   native.http_file(

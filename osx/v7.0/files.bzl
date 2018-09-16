@@ -1,4 +1,4 @@
-V690_OSX_ZOS = [
+V70_OSX_ZOS = [
 "collects/acks/compiled/acks_rkt.zo",
 "collects/compiler/compiled/cm-accomplice_rkt.zo",
 "collects/compiler/compiled/cm_rkt.zo",
@@ -591,11 +591,11 @@ V690_OSX_ZOS = [
 "share/pkgs/racket-x86_64-macosx-3/racket/compiled/info_rkt.zo",
 ]
 
-V690_OSX_BINARIES = [
+V70_OSX_BINARIES = [
 "bin/racket",
 "bin/raco",
 "lib/Racket.framework/Racket",
-"lib/Racket.framework/Versions/6.90.0.900_3m/Racket",
+"lib/Racket.framework/Versions/7.0_3m/Racket",
 "lib/libcrypto.1.1.dylib",
 "lib/libssl.1.1.dylib",
 "lib/mzdyn3m.o",

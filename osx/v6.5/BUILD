@@ -5,7 +5,7 @@ genrule(
   visibility = ["//visibility:public"],
   outs = V65_OSX_FILES,
   srcs = ["@racket_minimal_x86_64_6_5_osx//file"],
-  cmd = "tar xfz $< -C $(@D) -s /^racket.//"
+  cmd = "tar xfz $< -C $(@D) --strip-components 1"
 )
 
 genrule(

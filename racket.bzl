@@ -2,7 +2,7 @@ racket_src_file_extensions = [".rkt"]
 racket_zo_file_extensions = [".zo"]
 
 RacketInfo = provider(fields=["transitive_zos", "transitive_links"])
-racket_toolchain_type = "//:racket_toolchain"
+racket_toolchain_type = "@minimal_racket//:racket_toolchain"
 
 # Implementation of racket_binary and racket_test rules
 def _bin_impl(ctx):

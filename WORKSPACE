@@ -4,6 +4,6 @@ load(":releases.bzl", "racket_releases")
 racket_releases()
 
 register_toolchains(
-  '//:osx_racket_toolchain',
-  '//:linux_racket_toolchain',
+  '@minimal_racket//:osx_racket_toolchain',
+  '@minimal_racket//:linux_racket_toolchain',
 )

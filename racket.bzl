@@ -22,7 +22,7 @@ def _bin_impl(ctx):
     'RUNFILES="$(readlink "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}").runfiles"\n' +
     'exec "$RUNFILES/%s/%s" --no-user-path ' % (
        ctx.workspace_name,
-       toolchain.racket_bin.short_path) +
+       toolchain.target_racket_bin.short_path) +
     '-l racket/base ' +
     '-e "(define link-root \\"$RUNFILES/%s\\")" ' % ctx.workspace_name +
     "-e '%s' " % link_file_expression +
@@ -39,7 +39,7 @@ def _bin_impl(ctx):
 
   runfiles = ctx.runfiles(
     transitive_files = depset(
-      transitive = [toolchain.core_racket.files] +
+      transitive = [toolchain.target_core_racket.files] +
                    [dep[RacketInfo].transitive_zos for dep in ctx.attr.deps] +
                    [dep[RacketInfo].transitive_links for dep in ctx.attr.deps],
     ),
@@ -73,15 +73,15 @@ def racket_compile(ctx, src_file, output_file, link_files, inputs):
   args.add_all(["--output_dir", output_file.dirname])
 
   ctx.actions.run(
-    executable = toolchain.racket_bin,
+    executable = toolchain.exec_racket_bin,
     arguments = [args],
     inputs = depset(
       transitive = [inputs,
-                    toolchain.core_racket.files,
+                    toolchain.exec_core_racket.files,
                     ctx.attr._bazel_tools[RacketInfo].transitive_zos,
                     ctx.attr._bazel_tools[RacketInfo].transitive_links],
     ),
-    tools = [toolchain.racket_bin],
+    tools = [toolchain.exec_racket_bin],
     outputs=[output_file],
   )
 
@@ -167,13 +167,13 @@ def _bootstrap_lib_impl(ctx):
     "((compile-zos #f #:module? #t) (list src-path) \"%s\")" % ctx.outputs.zo.dirname])
 
   ctx.actions.run(
-    executable=toolchain.racket_bin,
+    executable=toolchain.exec_racket_bin,
     arguments = [args],
     inputs = depset(
       direct = ctx.files.srcs,
-      transitive = [toolchain.core_racket.files],
+      transitive = [toolchain.exec_core_racket.files],
     ),
-    tools = [toolchain.racket_bin],
+    tools = [toolchain.exec_racket_bin],
     outputs=[ctx.outputs.zo],
   )
 
@@ -205,8 +205,10 @@ def _collection_impl(ctx):
 def _racket_toolchain_impl(ctx):
   return [
     platform_common.ToolchainInfo(
-      core_racket = ctx.attr.core_racket,
-      racket_bin = ctx.executable.racket_bin,
+      exec_core_racket = ctx.attr.exec_core_racket,
+      exec_racket_bin = ctx.executable.exec_racket_bin,
+      target_core_racket = ctx.attr.target_core_racket,
+      target_racket_bin = ctx.executable.target_racket_bin,
     ),
   ]
 
@@ -304,8 +306,13 @@ racket_collection = rule(
 racket_toolchain = rule(
   implementation = _racket_toolchain_impl,
   attrs = {
-    'core_racket': attr.label(mandatory=True),
-    'racket_bin': attr.label(mandatory=True, executable=True, allow_files=True,
-                             cfg="target"),
+    'exec_core_racket': attr.label(mandatory=True, cfg="host"),
+    'exec_racket_bin':
+        attr.label(mandatory=True, executable=True, allow_files=True,
+                   cfg="host"),
+    'target_core_racket': attr.label(mandatory=True, cfg="target"),
+    'target_racket_bin':
+        attr.label(mandatory=True, executable=True, allow_files=True,
+                   cfg="target"),
   }
 )

@@ -95,13 +95,15 @@ def _lib_impl(ctx):
   if (not(src_name.rpartition(".rkt")[0] == ctx.label.name)):
     fail("Source file must match rule name", "srcs")
 
+  output_zo = ctx.actions.declare_file("compiled/%s_rkt.zo" % ctx.attr.name)
+
   dependency_zos = depset(transitive=[dep[RacketInfo].transitive_zos for dep in ctx.attr.deps])
   dependency_links = depset(transitive=[dep[RacketInfo].transitive_links for dep in ctx.attr.deps])
 
   racket_compile(
     ctx,
     src_file = src_file,
-    output_file = ctx.outputs.zo,
+    output_file = output_zo,
     link_files = dependency_links,
     inputs = depset(
       direct = ctx.files.srcs,
@@ -111,9 +113,10 @@ def _lib_impl(ctx):
 
   return [
     DefaultInfo(
+      files = depset([output_zo]),
       runfiles = ctx.runfiles(
         transitive_files = depset(
-          direct = [ctx.outputs.zo],
+          direct = [output_zo],
           transitive = [data.files for data in ctx.attr.data] +
                        [dep.files for dep in ctx.attr.deps],
         ),
@@ -122,7 +125,7 @@ def _lib_impl(ctx):
     ),
     RacketInfo(
       transitive_zos = depset(
-        direct = [ctx.outputs.zo],
+        direct = [output_zo],
         transitive = [dependency_zos],
       ),
       transitive_links = dependency_links,
@@ -139,6 +142,8 @@ def _bootstrap_lib_impl(ctx):
     fail("Source file must end in .rkt", "srcs")
   if (not(src_name.rpartition(".rkt")[0] == ctx.label.name)):
     fail("Source file must match rule name", "srcs")
+
+  output_zo = ctx.actions.declare_file("compiled/%s_rkt.zo" % ctx.attr.name)
 
   args = ctx.actions.args()
 
@@ -164,7 +169,7 @@ def _bootstrap_lib_impl(ctx):
     "  (make-file-or-directory-link (path->complete-path \"%s\") gen-path))" % src_file.path])
   args.add_all([
     "-e",
-    "((compile-zos #f #:module? #t) (list src-path) \"%s\")" % ctx.outputs.zo.dirname])
+    "((compile-zos #f #:module? #t) (list src-path) \"%s\")" % output_zo.dirname])
 
   ctx.actions.run(
     executable=toolchain.exec_racket_bin,
@@ -174,29 +179,37 @@ def _bootstrap_lib_impl(ctx):
       transitive = [toolchain.exec_core_racket.files],
     ),
     tools = [toolchain.exec_racket_bin],
-    outputs=[ctx.outputs.zo],
+    outputs=[output_zo],
   )
 
   return [
+    DefaultInfo(
+      files = depset([output_zo]),
+    ),
     RacketInfo(
-      transitive_zos = depset([ctx.outputs.zo]),
+      transitive_zos = depset([output_zo]),
       transitive_links = depset([])
     )
   ]
 
 def _collection_impl(ctx):
+  output_links = ctx.actions.declare_file("%s_links.rktd" % ctx.attr.name)
+
   ctx.actions.write(
-    output = ctx.outputs.links,
+    output = output_links,
     content = "((\"%s\" \".\"))" % ctx.attr.name,
   )
 
   return [
+    DefaultInfo(
+      files = depset([output_links]),
+    ),
     RacketInfo(
       transitive_zos = depset(
         transitive = [dep[RacketInfo].transitive_zos for dep in ctx.attr.deps]
       ),
       transitive_links = depset(
-        direct = [ctx.outputs.links],
+        direct = [output_links],
         transitive = [dep[RacketInfo].transitive_links for dep in ctx.attr.deps]
       )
     ),
@@ -279,27 +292,18 @@ racket_binary = rule(
 
 racket_library = rule(
   implementation=_lib_impl,
-  outputs = {
-    "zo": "compiled/%{name}_rkt.zo",
-  },
   toolchains = [racket_toolchain_type],
   attrs = _racket_lib_attrs
 )
 
 bootstrap_racket_library = rule(
   implementation=_bootstrap_lib_impl,
-  outputs = {
-    "zo": "compiled/%{name}_rkt.zo",
-  },
   toolchains = [racket_toolchain_type],
   attrs = _racket_bootstrap_lib_attrs
 )
 
 racket_collection = rule(
   implementation = _collection_impl,
-  outputs = {
-    "links": "%{name}_links.rktd",
-  },
   attrs = _racket_collection_attrs,
 )
 

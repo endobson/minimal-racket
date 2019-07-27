@@ -43,12 +43,12 @@ racket_toolchain(
 toolchain(
     name = "osx_osx_racket_toolchain",
     exec_compatible_with = [
-        "@bazel_tools//platforms:osx",
-        "@bazel_tools//platforms:x86_64",
+        "@platforms//os:osx",
+        "@platforms//cpu:x86_64",
     ],
     target_compatible_with = [
-        "@bazel_tools//platforms:osx",
-        "@bazel_tools//platforms:x86_64",
+        "@platforms//os:osx",
+        "@platforms//cpu:x86_64",
     ],
     toolchain = ":osx_osx_racket_toolchain_impl",
     toolchain_type = ":racket_toolchain",
@@ -57,12 +57,12 @@ toolchain(
 toolchain(
     name = "linux_linux_racket_toolchain",
     exec_compatible_with = [
-        "@bazel_tools//platforms:linux",
-        "@bazel_tools//platforms:x86_64",
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
     ],
     target_compatible_with = [
-        "@bazel_tools//platforms:linux",
-        "@bazel_tools//platforms:x86_64",
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
     ],
     toolchain = ":linux_linux_racket_toolchain_impl",
     toolchain_type = ":racket_toolchain",
@@ -71,12 +71,12 @@ toolchain(
 toolchain(
     name = "osx_linux_racket_toolchain",
     exec_compatible_with = [
-        "@bazel_tools//platforms:osx",
-        "@bazel_tools//platforms:x86_64",
+        "@platforms//os:osx",
+        "@platforms//cpu:x86_64",
     ],
     target_compatible_with = [
-        "@bazel_tools//platforms:linux",
-        "@bazel_tools//platforms:x86_64",
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
     ],
     toolchain = ":osx_linux_racket_toolchain_impl",
     toolchain_type = ":racket_toolchain",
@@ -85,12 +85,12 @@ toolchain(
 toolchain(
     name = "linux_osx_racket_toolchain",
     exec_compatible_with = [
-        "@bazel_tools//platforms:linux",
-        "@bazel_tools//platforms:x86_64",
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
     ],
     target_compatible_with = [
-        "@bazel_tools//platforms:osx",
-        "@bazel_tools//platforms:x86_64",
+        "@platforms//os:osx",
+        "@platforms//cpu:x86_64",
     ],
     toolchain = ":linux_osx_racket_toolchain_impl",
     toolchain_type = ":racket_toolchain",

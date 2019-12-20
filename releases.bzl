@@ -20,7 +20,19 @@ def racket_releases():
   )
 
   http_file(
+    name = "racket_minimal_x86_64_7_5_osx",
+    urls = ["https://download.racket-lang.org/releases/7.5/installers/racket-minimal-7.5-x86_64-macosx.tgz"],
+    sha256 = "d718342c84b238101515385d568eaae97198e3af6fc9248cd3482de9bc7e9af8"
+  )
+
+  http_file(
     name = "racket_minimal_x86_64_7_0_linux",
     urls = ["https://download.racket-lang.org/releases/7.0/installers/racket-minimal-7.0-x86_64-linux.tgz"],
     sha256 = "bc144c57717b05b2f92d8a53a26a2453f1d0430315ffe74800aab2f56f54a7f8"
+  )
+
+  http_file(
+    name = "racket_minimal_x86_64_7_5_linux",
+    urls = ["https://download.racket-lang.org/releases/7.5/installers/racket-minimal-7.5-x86_64-linux.tgz"],
+    sha256 = "5a216de21fb20f554dd5eacd546ed709b5e1b4c3faf9bda20523be99ca05d29b"
   )

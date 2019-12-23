@@ -12,6 +12,8 @@ http_archive(
 )
 
 register_toolchains(
+  '@minimal_racket//:osx_racket_bootstrap_toolchain',
+  '@minimal_racket//:linux_racket_bootstrap_toolchain',
   '@minimal_racket//:osx_osx_racket_toolchain',
   '@minimal_racket//:linux_linux_racket_toolchain',
   '@minimal_racket//:osx_linux_racket_toolchain',

@@ -2,6 +2,7 @@ racket_src_file_extensions = [".rkt"]
 racket_zo_file_extensions = [".zo"]
 
 RacketInfo = provider(fields=["transitive_zos", "transitive_links"])
+racket_bootstrap_toolchain_type = "@minimal_racket//:racket_bootstrap_toolchain"
 racket_toolchain_type = "@minimal_racket//:racket_toolchain"
 
 # Implementation of racket_binary and racket_test rules
@@ -54,7 +55,7 @@ def _bin_impl(ctx):
 
 def racket_compile(ctx, src_file, output_file, link_files, inputs):
   toolchain = ctx.toolchains[racket_toolchain_type]
-  links = ctx.attr._bazel_tools[RacketInfo].transitive_links.to_list()
+  links = toolchain.bazel_tools[RacketInfo].transitive_links.to_list()
   if (len(links) != 1):
     fail("Only expecting one link in tools")
   link_file_expression = (
@@ -78,8 +79,8 @@ def racket_compile(ctx, src_file, output_file, link_files, inputs):
     inputs = depset(
       transitive = [inputs,
                     toolchain.exec_core_racket.files,
-                    ctx.attr._bazel_tools[RacketInfo].transitive_zos,
-                    ctx.attr._bazel_tools[RacketInfo].transitive_links],
+                    toolchain.bazel_tools[RacketInfo].transitive_zos,
+                    toolchain.bazel_tools[RacketInfo].transitive_links],
     ),
     tools = [toolchain.exec_racket_bin],
     outputs=[output_file],
@@ -133,7 +134,7 @@ def _lib_impl(ctx):
   ]
 
 def _bootstrap_lib_impl(ctx):
-  toolchain = ctx.toolchains[racket_toolchain_type]
+  toolchain = ctx.toolchains[racket_bootstrap_toolchain_type]
   if (len(ctx.attr.srcs) != 1):
     fail("Must supply exactly one source file: Got %s" % len(ctx.attr.srcs), "srcs")
   src_file = ctx.files.srcs[0]
@@ -215,6 +216,14 @@ def _collection_impl(ctx):
     ),
   ]
 
+def _racket_bootstrap_toolchain_impl(ctx):
+  return [
+    platform_common.ToolchainInfo(
+      exec_core_racket = ctx.attr.exec_core_racket,
+      exec_racket_bin = ctx.executable.exec_racket_bin,
+    ),
+  ]
+
 def _racket_toolchain_impl(ctx):
   return [
     platform_common.ToolchainInfo(
@@ -222,6 +231,7 @@ def _racket_toolchain_impl(ctx):
       exec_racket_bin = ctx.executable.exec_racket_bin,
       target_core_racket = ctx.attr.target_core_racket,
       target_racket_bin = ctx.executable.target_racket_bin,
+      bazel_tools = ctx.attr.bazel_tools,
     ),
   ]
 
@@ -247,11 +257,6 @@ _racket_lib_attrs = {
   ),
   "deps": attr.label_list(
     providers = [RacketInfo],
-  ),
-  "_bazel_tools": attr.label(
-    default=Label("@minimal_racket//build_rules:bazel-tools"),
-    providers = [RacketInfo],
-    cfg="host",
   ),
 }
 
@@ -298,13 +303,23 @@ racket_library = rule(
 
 bootstrap_racket_library = rule(
   implementation=_bootstrap_lib_impl,
-  toolchains = [racket_toolchain_type],
+  toolchains = [racket_bootstrap_toolchain_type],
   attrs = _racket_bootstrap_lib_attrs
 )
 
 racket_collection = rule(
   implementation = _collection_impl,
   attrs = _racket_collection_attrs,
+)
+
+racket_bootstrap_toolchain = rule(
+  implementation = _racket_bootstrap_toolchain_impl,
+  attrs = {
+    'exec_core_racket': attr.label(mandatory=True, cfg="host"),
+    'exec_racket_bin':
+        attr.label(mandatory=True, executable=True, allow_files=True,
+                   cfg="host"),
+  }
 )
 
 racket_toolchain = rule(
@@ -318,5 +333,6 @@ racket_toolchain = rule(
     'target_racket_bin':
         attr.label(mandatory=True, executable=True, allow_files=True,
                    cfg="target"),
+    'bazel_tools': attr.label(mandatory=True, cfg="host"),
   }
 )

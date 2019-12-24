@@ -32,105 +32,102 @@ def _bin_impl(ctx):
        script_path)
   )
 
+  stub_file = ctx.actions.declare_file(ctx.label.name)
   ctx.actions.write(
-    output=ctx.outputs.executable,
+    output=stub_file,
     content=stub_script,
     is_executable=True
   )
 
-  runfiles = ctx.runfiles(
-    transitive_files = depset(
-      transitive = [toolchain.target_core_racket.files] +
-                   [dep[RacketInfo].transitive_zos for dep in ctx.attr.deps] +
-                   [dep[RacketInfo].transitive_links for dep in ctx.attr.deps],
-    ),
-    collect_data = True,
-  )
-
   return [
     DefaultInfo(
-      runfiles = runfiles
+      executable = stub_file,
+      runfiles = ctx.runfiles(
+        transitive_files = depset(
+          transitive = [
+            toolchain.target_core_racket.files,
+            depset(transitive=[dep[RacketInfo].transitive_zos for dep in ctx.attr.deps]),
+            depset(transitive=[dep[RacketInfo].transitive_links for dep in ctx.attr.deps])
+          ],
+        ),
+      )
     ),
   ]
 
-def racket_compile(ctx, src_file, output_file, link_files, inputs):
+def racket_compile(ctx, src_file, dep_infos):
+  src_name = src_file.basename
+  if (not(src_name.endswith(".rkt"))):
+    fail("Source file must end in .rkt")
+
   toolchain = ctx.toolchains[racket_toolchain_type]
-  links = toolchain.bazel_tools[RacketInfo].transitive_links.to_list()
-  if (len(links) != 1):
+  bazel_tool_links = toolchain.bazel_tools[RacketInfo].transitive_links.to_list()
+  if (len(bazel_tool_links) != 1):
     fail("Only expecting one link in tools")
-  link_file_expression = (
-    '(current-library-collection-links (list #f (build-path (current-directory) "%s")))'
-    % links[0].path)
+  bazel_tool_link = bazel_tool_links[0]
+
+  output_zo = ctx.actions.declare_file("compiled/%s_rkt.zo" % ctx.attr.name, sibling=src_file)
+
+  dependency_zos = depset(transitive=[info.transitive_zos for info in dep_infos])
+  dependency_links = depset(transitive=[info.transitive_links for info in dep_infos])
 
   args = ctx.actions.args()
   args.add("--no-user-path")
-  args.add_all(["-e", link_file_expression])
+  args.add_all(["-e", '(current-library-collection-links (list #f (build-path (current-directory) "%s")))'
+                      % bazel_tool_link.path])
   args.add_all(["-l", "bazel-tools/racket-compiler"])
   args.add("--")
   args.add("--links")
-  args.add_joined(link_files, format_each='"%s"', join_with=" ", format_joined="(%s)", omit_if_empty=False)
+  args.add_joined(dependency_links, format_each='"%s"', join_with=" ", format_joined="(%s)", omit_if_empty=False)
   args.add_all(["--file", '("%s" "%s" "%s")' % (src_file.path, src_file.short_path, src_file.root.path)])
   args.add_all(["--bin_dir", ctx.bin_dir.path])
-  args.add_all(["--output_dir", output_file.dirname])
+  args.add_all(["--output_dir", output_zo.dirname])
 
   ctx.actions.run(
     executable = toolchain.exec_racket_bin,
     arguments = [args],
     inputs = depset(
-      transitive = [inputs,
+      direct = [src_file],
+      transitive = [dependency_zos,
+                    dependency_links,
                     toolchain.exec_core_racket.files,
                     toolchain.bazel_tools[RacketInfo].transitive_zos,
                     toolchain.bazel_tools[RacketInfo].transitive_links],
     ),
     tools = [toolchain.exec_racket_bin],
-    outputs=[output_file],
-  )
-
-def _lib_impl(ctx):
-  if (len(ctx.attr.srcs) != 1):
-    fail("Must supply exactly one source file: Got %s" % len(ctx.attr.srcs), "srcs")
-  src_file = ctx.files.srcs[0]
-  src_name = src_file.basename
-  if (not(src_name.endswith(".rkt"))):
-    fail("Source file must end in .rkt", "srcs")
-  if (not(src_name.rpartition(".rkt")[0] == ctx.label.name)):
-    fail("Source file must match rule name", "srcs")
-
-  output_zo = ctx.actions.declare_file("compiled/%s_rkt.zo" % ctx.attr.name)
-
-  dependency_zos = depset(transitive=[dep[RacketInfo].transitive_zos for dep in ctx.attr.deps])
-  dependency_links = depset(transitive=[dep[RacketInfo].transitive_links for dep in ctx.attr.deps])
-
-  racket_compile(
-    ctx,
-    src_file = src_file,
-    output_file = output_zo,
-    link_files = dependency_links,
-    inputs = depset(
-      direct = ctx.files.srcs,
-      transitive = [dependency_zos, dependency_links],
-    ),
+    outputs=[output_zo],
   )
 
   return [
-    DefaultInfo(
-      files = depset([output_zo]),
-      runfiles = ctx.runfiles(
-        transitive_files = depset(
-          direct = [output_zo],
-          transitive = [data.files for data in ctx.attr.data] +
-                       [dep.files for dep in ctx.attr.deps],
-        ),
-        collect_data = True,
-      ),
-    ),
+    output_zo,
     RacketInfo(
       transitive_zos = depset(
         direct = [output_zo],
         transitive = [dependency_zos],
       ),
       transitive_links = dependency_links,
-    )
+    ),
+  ]
+
+
+
+def _lib_impl(ctx):
+  if (len(ctx.attr.srcs) != 1):
+    fail("Must supply exactly one source file: Got %s" % len(ctx.attr.srcs), "srcs")
+  src_file = ctx.files.srcs[0]
+  if (not(src_file.basename.rpartition(".rkt")[0] == ctx.label.name)):
+    fail("Source file must match rule name", "srcs")
+
+  [output_zo, racket_info] = racket_compile(
+    ctx,
+    src_file = src_file,
+    dep_infos = [dep[RacketInfo] for dep in ctx.attr.deps]
+  )
+
+  return [
+    DefaultInfo(
+      files = depset([output_zo]),
+    ),
+    racket_info,
   ]
 
 def _bootstrap_lib_impl(ctx):
@@ -243,7 +240,9 @@ _racket_bin_attrs = {
   "data": attr.label_list(
     allow_files=True,
   ),
-  "deps": attr.label_list(allow_files=racket_zo_file_extensions),
+  "deps": attr.label_list(
+    allow_files=racket_zo_file_extensions
+  ),
 }
 
 _racket_lib_attrs = {

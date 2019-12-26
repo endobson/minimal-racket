@@ -67,7 +67,7 @@ def racket_compile(ctx, src_file, data_deps, dep_infos):
     fail("Only expecting one link in tools")
   bazel_tool_link = bazel_tool_links[0]
 
-  output_zo = ctx.actions.declare_file("compiled/%s_rkt.zo" % ctx.attr.name, sibling=src_file)
+  output_zo = ctx.actions.declare_file("compiled/%s_rkt.zo" % src_name[:-4], sibling=src_file)
 
   dependency_zos = depset(transitive=[info.zos for info in dep_infos])
   dependency_links = depset(transitive=[info.links for info in dep_infos])

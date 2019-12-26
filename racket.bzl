@@ -1,7 +1,7 @@
 racket_src_file_extensions = [".rkt"]
 racket_zo_file_extensions = [".zo"]
 
-RacketInfo = provider(fields=["transitive_zos", "transitive_links", "transitive_data"])
+RacketInfo = provider(fields=["zos", "links", "data"])
 racket_bootstrap_toolchain_type = "@minimal_racket//:racket_bootstrap_toolchain"
 racket_toolchain_type = "@minimal_racket//:racket_toolchain"
 
@@ -10,7 +10,7 @@ def _bin_impl(ctx):
   toolchain = ctx.toolchains[racket_toolchain_type]
   script_path = ctx.file.main_module.short_path
 
-  link_files = depset(transitive=[dep[RacketInfo].transitive_links for dep in ctx.attr.deps])
+  link_files = depset(transitive=[dep[RacketInfo].links for dep in ctx.attr.deps])
 
   link_file_expression = "(let ([cur (current-directory)]) (current-library-collection-links (list #f "
   for link_file in link_files.to_list():
@@ -47,9 +47,9 @@ def _bin_impl(ctx):
           transitive = [
             toolchain.target_core_racket.files,
             depset(transitive=[dep.files for dep in ctx.attr.data]),
-            depset(transitive=[dep[RacketInfo].transitive_zos for dep in ctx.attr.deps]),
-            depset(transitive=[dep[RacketInfo].transitive_links for dep in ctx.attr.deps]),
-            depset(transitive=[dep[RacketInfo].transitive_data for dep in ctx.attr.deps]),
+            depset(transitive=[dep[RacketInfo].zos for dep in ctx.attr.deps]),
+            depset(transitive=[dep[RacketInfo].links for dep in ctx.attr.deps]),
+            depset(transitive=[dep[RacketInfo].data for dep in ctx.attr.deps]),
           ],
         ),
       )
@@ -62,16 +62,16 @@ def racket_compile(ctx, src_file, data_deps, dep_infos):
     fail("Source file must end in .rkt")
 
   toolchain = ctx.toolchains[racket_toolchain_type]
-  bazel_tool_links = toolchain.bazel_tools[RacketInfo].transitive_links.to_list()
+  bazel_tool_links = toolchain.bazel_tools[RacketInfo].links.to_list()
   if (len(bazel_tool_links) != 1):
     fail("Only expecting one link in tools")
   bazel_tool_link = bazel_tool_links[0]
 
   output_zo = ctx.actions.declare_file("compiled/%s_rkt.zo" % ctx.attr.name, sibling=src_file)
 
-  dependency_zos = depset(transitive=[info.transitive_zos for info in dep_infos])
-  dependency_links = depset(transitive=[info.transitive_links for info in dep_infos])
-  dependency_data = depset(transitive=[info.transitive_data for info in dep_infos])
+  dependency_zos = depset(transitive=[info.zos for info in dep_infos])
+  dependency_links = depset(transitive=[info.links for info in dep_infos])
+  dependency_data = depset(transitive=[info.data for info in dep_infos])
 
   args = ctx.actions.args()
   args.add("--no-user-path")
@@ -90,13 +90,16 @@ def racket_compile(ctx, src_file, data_deps, dep_infos):
     arguments = [args],
     inputs = depset(
       direct = [src_file],
-      transitive = [dependency_zos,
-                    dependency_links,
-                    dependency_data,
-                    data_deps,
-                    toolchain.exec_core_racket.files,
-                    toolchain.bazel_tools[RacketInfo].transitive_zos,
-                    toolchain.bazel_tools[RacketInfo].transitive_links],
+      transitive = [
+        dependency_zos,
+        dependency_links,
+        dependency_data,
+        data_deps,
+        toolchain.exec_core_racket.files,
+        toolchain.bazel_tools[RacketInfo].zos,
+        toolchain.bazel_tools[RacketInfo].links,
+        toolchain.bazel_tools[RacketInfo].data,
+      ],
     ),
     tools = [toolchain.exec_racket_bin],
     outputs=[output_zo],
@@ -105,12 +108,12 @@ def racket_compile(ctx, src_file, data_deps, dep_infos):
   return [
     output_zo,
     RacketInfo(
-      transitive_zos = depset(
+      zos = depset(
         direct = [output_zo],
         transitive = [dependency_zos],
       ),
-      transitive_links = dependency_links,
-      transitive_data = depset(transitive=[dependency_data, data_deps]),
+      links = dependency_links,
+      data = depset(transitive=[dependency_data, data_deps]),
     ),
   ]
 
@@ -192,9 +195,9 @@ def _bootstrap_lib_impl(ctx):
       files = depset([output_zo]),
     ),
     RacketInfo(
-      transitive_zos = depset([output_zo]),
-      transitive_links = depset([]),
-      transitive_data = depset([]),
+      zos = depset([output_zo]),
+      links = depset([]),
+      data = depset([]),
     )
   ]
 
@@ -211,15 +214,15 @@ def _collection_impl(ctx):
       files = depset([output_links]),
     ),
     RacketInfo(
-      transitive_zos = depset(
-        transitive = [dep[RacketInfo].transitive_zos for dep in ctx.attr.deps]
+      zos = depset(
+        transitive = [dep[RacketInfo].zos for dep in ctx.attr.deps]
       ),
-      transitive_links = depset(
+      links = depset(
         direct = [output_links],
-        transitive = [dep[RacketInfo].transitive_links for dep in ctx.attr.deps]
+        transitive = [dep[RacketInfo].links for dep in ctx.attr.deps]
       ),
-      transitive_data = depset(
-        transitive = [dep[RacketInfo].transitive_data for dep in ctx.attr.deps]
+      data = depset(
+        transitive = [dep[RacketInfo].data for dep in ctx.attr.deps]
       ),
     ),
   ]

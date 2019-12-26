@@ -43,3 +43,18 @@ racket_binary(
         ":hello-world-server",
     ]
 )
+
+racket_library(
+    name = "data-example",
+    srcs  = ["data-example.rkt"],
+    data = ["test-data1"],
+)
+
+racket_test(
+    name = "data-example_test",
+    main_module = "data-example.rkt",
+    deps = [
+        ":data-example"
+    ],
+    data = ["test-data2"],
+)

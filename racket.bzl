@@ -56,7 +56,7 @@ def _bin_impl(ctx):
     ),
   ]
 
-def racket_compile(ctx, src_file, data_deps, dep_infos):
+def racket_compile(ctx, src_file, dep_infos, data_deps=depset(), compile_data_deps=depset()):
   src_name = src_file.basename
   if (not(src_name.endswith(".rkt"))):
     fail("Source file must end in .rkt")
@@ -95,6 +95,7 @@ def racket_compile(ctx, src_file, data_deps, dep_infos):
         dependency_links,
         dependency_data,
         data_deps,
+        compile_data_deps,
         toolchain.exec_core_racket.files,
         toolchain.bazel_tools[RacketInfo].zos,
         toolchain.bazel_tools[RacketInfo].links,
@@ -196,8 +197,8 @@ def _bootstrap_lib_impl(ctx):
     ),
     RacketInfo(
       zos = depset([output_zo]),
-      links = depset([]),
-      data = depset([]),
+      links = depset(),
+      data = depset(),
     )
   ]
 

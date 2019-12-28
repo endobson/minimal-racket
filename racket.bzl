@@ -73,23 +73,32 @@ def racket_compile(ctx, src_file, dep_infos, data_deps=depset(), compile_data_de
   dependency_links = depset(transitive=[info.links for info in dep_infos])
   dependency_data = depset(transitive=[info.data for info in dep_infos])
 
-  args = ctx.actions.args()
-  args.add("--no-user-path")
-  args.add_all(["-e", '(current-library-collection-links (list #f (build-path (current-directory) "%s")))'
-                      % bazel_tool_link.path])
-  args.add_all(["-l", "bazel-tools/racket-compiler"])
-  args.add("--")
-  args.add("--links")
-  args.add_joined(dependency_links, format_each='"%s"', join_with=" ", format_joined="(%s)", omit_if_empty=False)
-  args.add_all(["--file", '("%s" "%s" "%s")' % (src_file.path, src_file.short_path, src_file.root.path)])
-  args.add_all(["--bin_dir", ctx.bin_dir.path])
-  args.add_all(["--output_dir", output_zo.dirname])
+  file_args = ctx.actions.args()
+  file_args.add("--links")
+  file_args.add_joined(dependency_links, format_each='"%s"', join_with=" ", format_joined="(%s)",
+                       omit_if_empty=False)
+  file_args.add_all(["--file", '("%s" "%s" "%s")' % (src_file.path, src_file.short_path, src_file.root.path)])
+  file_args.add_all(["--bin_dir", ctx.bin_dir.path])
+  file_args.add_all(["--output_dir", output_zo.dirname])
+
+  args_file = ctx.actions.declare_file("%s.args" % src_name, sibling=src_file)
+  file_args.set_param_file_format('multiline')
+  ctx.actions.write(args_file, file_args)
+
+  compiler_args = ctx.actions.args()
+  compiler_args.add("--no-user-path")
+  compiler_args.add_all(
+    ["-e", '(current-library-collection-links (list #f (build-path (current-directory) "%s")))'
+           % bazel_tool_link.path])
+  compiler_args.add_all(["-l", "bazel-tools/racket-compiler"])
+  compiler_args.add("--")
+  compiler_args.add("@" + args_file.path)
 
   ctx.actions.run(
     executable = toolchain.exec_racket_bin,
-    arguments = [args],
+    arguments = [compiler_args],
     inputs = depset(
-      direct = [src_file],
+      direct = [src_file, args_file],
       transitive = [
         dependency_zos,
         dependency_links,

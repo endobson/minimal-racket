@@ -9,12 +9,23 @@
     compiler/compiler
     racket/match)
 
+  ;; Find arg file and read it
+  (define args
+    (let ([args (current-command-line-arguments)])
+      (unless (= (vector-length args) 1)
+        (error 'args "There must be exactly one argument"))
+      (define arg (vector-ref args 0))
+      (unless (string-prefix? arg "@")
+        (error 'args "The arg must start with '@'"))
+      (file->lines (substring arg 1))))
+
   (define links-arg #f)
   (define file-arg #f)
   (define bin-dir-arg #f)
   (define output-dir-arg #f)
 
   (command-line
+    #:argv args
     #:once-each
     [("--links") links "Link files"
      (set! links-arg links)]

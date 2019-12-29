@@ -63,7 +63,17 @@
     [else
      (define-values (q r) (quotient/remainder number 128))
      (write-byte (+ 128 r) port)
-     (write-varint port q)]))
+     (write-varint q port)]))
+
+(define (write-tagged-int32 field-number val port)
+  (write-varint (+ (arithmetic-shift field-number 3) 0) port)
+  (write-varint val port))
+
+(define (write-tagged-string field-number val port)
+  (write-varint (+ (arithmetic-shift field-number 3) 2) port)
+  (define bytes-val (string->bytes/utf-8 val))
+  (write-varint (bytes-length bytes-val) port)
+  (write-bytes bytes-val port))
 
 (struct work-request (args request-id))
 
@@ -93,10 +103,29 @@
   (unless (eof-object? proto-length)
     (define port (make-limited-input-port (current-input-port) proto-length))
     (define req (read-work-request port))
-    (run-single-compile (work-request-args req))
-    ;; We don't include any output or handle multiple requests currently
-    (write-varint 0 (current-output-port))
+    (define stdout/stderr (open-output-string))
+    (define stdin (open-input-string ""))
+    (define exit-code
+      (parameterize ([current-output-port stdout/stderr]
+                     [current-error-port stdout/stderr]
+                     [current-input-port stdin])
+        (with-handlers ([exn?
+                         (lambda (e)
+                           ((error-display-handler) (exn-message e) e)
+                           1)])
+          (run-single-compile (work-request-args req))
+          0)))
+    (define work-response-bytes
+      (let ([work-response-buffer (open-output-bytes)])
+        (write-tagged-int32 1 exit-code work-response-buffer)
+        (write-tagged-string 2 (get-output-string stdout/stderr) work-response-buffer)
+        (write-tagged-int32 3 (work-request-request-id req) work-response-buffer)
+        (get-output-bytes work-response-buffer)))
+
+    (write-varint (bytes-length work-response-bytes) (current-output-port))
+    (write-bytes work-response-bytes (current-output-port))
     (flush-output (current-output-port))
+
     (run-persistent-worker)))
 
 (define (run-single-compile args)

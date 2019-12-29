@@ -113,6 +113,9 @@ def racket_compile(ctx, src_file, dep_infos, data_deps=depset(), compile_data_de
     ),
     tools = [toolchain.exec_racket_bin],
     outputs=[output_zo],
+    execution_requirements = {
+      "supports-workers" : "1",
+    },
   )
 
   return [

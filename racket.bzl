@@ -116,6 +116,7 @@ def racket_compile(ctx, src_file, dep_infos, data_deps=depset(), compile_data_de
     execution_requirements = {
       "supports-workers" : "1",
     },
+    mnemonic = "RacketCompile",
   )
 
   return [

@@ -128,6 +128,8 @@
 
     (run-persistent-worker)))
 
+(define-namespace-anchor anchor)
+
 (define (run-single-compile args)
   (define links-arg #f)
   (define file-arg #f)
@@ -180,7 +182,9 @@
              (make-file-or-directory-link (path->complete-path path) gen-path)
              gen-path))]))
 
-  ((compile-zos #f #:module? #t) (list source-path) output-dir-arg))
+  (parameterize ([current-namespace (make-empty-namespace)])
+    (namespace-attach-module (namespace-anchor->namespace anchor) 'racket)
+    ((compile-zos #f #:module? #t) (list source-path) output-dir-arg)))
 
 (module* main #f
   (let ([args (current-command-line-arguments)])

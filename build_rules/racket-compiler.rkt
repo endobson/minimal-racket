@@ -129,66 +129,46 @@
 
     (run-persistent-worker)))
 
+(define (basename p)
+  (let-values ([(base name dir?) (split-path p)])
+    base))
+
 (define-namespace-anchor anchor)
 
 (define (run-single-compile args)
-  (define links-arg #f)
-  (define file-arg #f)
-  (define bin-dir-arg #f)
-  (define output-file-arg #f)
+  (define collection-links #f)
+  (define source-path #f)
+  (define output-path #f)
 
   (command-line
     #:argv args
     #:once-each
     [("--links") links "Link files"
-     (set! links-arg links)]
-    [("--file") file "Source file tuple"
-     (set! file-arg file)]
-    [("--bin_dir") directory "Bin directory"
-     (set! bin-dir-arg directory)]
-    [("--output_file") file "Output file"
-     (set! output-file-arg file)])
+     (set! collection-links
+           (cons #f (map path->complete-path (read (open-input-string links)))))]
+    [("--source_file") path "Source file path"
+     (set! source-path (build-path path))]
+    [("--output_file") path "Output file path"
+     (set! output-path (build-path path))])
 
-  ;; Setup collection-links
-  (define cwd (current-directory))
-  (define links
-    (read (open-input-string links-arg)))
-  (current-library-collection-links
-    (cons #f (map (lambda (p) (build-path cwd p)) links)))
+  (define output-base-dir (basename (basename (path->complete-path output-path))))
 
-  ;; Determine source files
-  (define bin-dir-path
-    (if (equal? bin-dir-arg "")
-        cwd
-        (build-path cwd bin-dir-arg)))
-  (define file-tuple
-    (read (open-input-string file-arg)))
-  (define source-path
-    (match file-tuple
-      [(list path short-path root)
-       (define root-path
-         (if (equal? root "")
-             cwd
-             (build-path cwd root)))
-       (if (equal? root-path bin-dir-path)
-           path
-           (let ([gen-path
-                   ;; TODO(endobson) fix this when there is a less hacky way.
-                   (if (string-prefix? path "external/")
-                       (build-path bin-dir-path path)
-                       (build-path bin-dir-path short-path))])
-             (make-parent-directory* gen-path)
-             (when (file-exists? gen-path)
-               (delete-file gen-path))
-             (make-file-or-directory-link (path->complete-path path) gen-path)
-             gen-path))]))
-
-  (with-module-reading-parameterization
-    (lambda ()
-      (parameterize ([current-namespace (make-empty-namespace)])
-        (namespace-attach-module (namespace-anchor->namespace anchor) 'racket)
-        (compile-file source-path output-file-arg
-                      (lambda (expr) (check-module-form expr 'unused source-path)))))))
+  (parameterize ([current-namespace (make-empty-namespace)]
+                 [current-load-relative-directory output-base-dir]
+                 [current-write-relative-directory output-base-dir]
+                 [current-library-collection-links collection-links])
+    (namespace-attach-module (namespace-anchor->namespace anchor) 'racket)
+    (with-module-reading-parameterization
+      (lambda ()
+        (call-with-input-file source-path
+          (lambda (in)
+            (port-count-lines! in)
+            (define stx (read-syntax source-path in))
+            (unless (eof-object? (read-syntax source-path in))
+              (error 'compile "More than one object"))
+            (call-with-output-file output-path
+              (lambda (out)
+                (write (compile-syntax (check-module-form stx 'unused source-path)) out)))))))))
 
 (module* main #f
   (let ([args (current-command-line-arguments)])

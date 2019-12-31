@@ -79,7 +79,7 @@ def racket_compile(ctx, src_file, dep_infos, data_deps=depset(), compile_data_de
                        omit_if_empty=False)
   file_args.add_all(["--file", '("%s" "%s" "%s")' % (src_file.path, src_file.short_path, src_file.root.path)])
   file_args.add_all(["--bin_dir", ctx.bin_dir.path])
-  file_args.add_all(["--output_dir", output_zo.dirname])
+  file_args.add_all(["--output_file", output_zo])
 
   args_file = ctx.actions.declare_file("%s.args" % src_name, sibling=src_file)
   file_args.set_param_file_format('multiline')

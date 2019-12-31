@@ -5,7 +5,8 @@
   racket/file
   racket/port
   racket/string
-  compiler/compiler
+  compiler/compile-file
+  syntax/modread
   racket/match)
 
 (define (read-proto-varint port [allow-eof? #f])
@@ -75,7 +76,7 @@
   (write-varint (bytes-length bytes-val) port)
   (write-bytes bytes-val port))
 
-(struct work-request (args request-id))
+(struct work-request (args request-id) #:transparent)
 
 (define (read-work-request port)
   (define rev-args '())
@@ -134,7 +135,7 @@
   (define links-arg #f)
   (define file-arg #f)
   (define bin-dir-arg #f)
-  (define output-dir-arg #f)
+  (define output-file-arg #f)
 
   (command-line
     #:argv args
@@ -145,8 +146,8 @@
      (set! file-arg file)]
     [("--bin_dir") directory "Bin directory"
      (set! bin-dir-arg directory)]
-    [("--output_dir") directory "Output directory"
-     (set! output-dir-arg directory)])
+    [("--output_file") file "Output file"
+     (set! output-file-arg file)])
 
   ;; Setup collection-links
   (define cwd (current-directory))
@@ -182,9 +183,12 @@
              (make-file-or-directory-link (path->complete-path path) gen-path)
              gen-path))]))
 
-  (parameterize ([current-namespace (make-empty-namespace)])
-    (namespace-attach-module (namespace-anchor->namespace anchor) 'racket)
-    ((compile-zos #f #:module? #t) (list source-path) output-dir-arg)))
+  (with-module-reading-parameterization
+    (lambda ()
+      (parameterize ([current-namespace (make-empty-namespace)])
+        (namespace-attach-module (namespace-anchor->namespace anchor) 'racket)
+        (compile-file source-path output-file-arg
+                      (lambda (expr) (check-module-form expr 'unused source-path)))))))
 
 (module* main #f
   (let ([args (current-command-line-arguments)])

@@ -97,7 +97,7 @@
         [(tag wire-type)
          (error 'persistent-worker "Unknown tag: ~a with wire-type: ~a" tag wire-type)])
       (read-fields)))
-  (work-request (reverse rev-args) request-id))
+  (work-request (reverse rev-args) (or request-id 0)))
 
 (define (run-persistent-worker)
   (define proto-length (read-proto-varint (current-input-port) #t))

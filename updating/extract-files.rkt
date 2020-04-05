@@ -10,7 +10,8 @@
   racket/system
   racket/cmdline)
 
-(match-define (vector path) (current-command-line-arguments))
+(match-define path
+  (command-line #:args (path) path))
 
 (define files
   (string-split

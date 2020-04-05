@@ -1,4 +1,4 @@
-V75_OSX_ZOS = [
+ZOS = [
 "collects/acks/compiled/acks_rkt.zo",
 "collects/compiler/compiled/cm-accomplice_rkt.zo",
 "collects/compiler/compiled/cm_rkt.zo",
@@ -609,7 +609,7 @@ V75_OSX_ZOS = [
 "share/pkgs/racket-x86_64-macosx-3/racket/compiled/info_rkt.zo",
 ]
 
-V75_OSX_BINARIES = [
+BINARIES = [
 "bin/racket",
 "bin/raco",
 "lib/Racket.framework/Racket",

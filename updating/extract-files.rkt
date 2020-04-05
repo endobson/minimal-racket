@@ -24,7 +24,7 @@
 
 (define zo-files (filter (lambda (f) (regexp-match? #rx".*\\.zo" f)) files))
 
-(displayln "V70_OSX_ZOS = [")
+(displayln "ZOS = [")
 (for ([zo zo-files])
   (printf "\"~a\",\n" (substring zo (string-length "racket/"))))
 (displayln "]")

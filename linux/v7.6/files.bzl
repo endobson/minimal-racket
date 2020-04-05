@@ -1,4 +1,4 @@
-V76_LINUX_ZOS = [
+ZOS = [
 "collects/acks/compiled/acks_rkt.zo",
 "collects/compiler/compiled/cm-accomplice_rkt.zo",
 "collects/compiler/compiled/cm_rkt.zo",
@@ -617,7 +617,7 @@ V76_LINUX_ZOS = [
 "collects/xml/private/compiled/xexpr_rkt.zo",
 ]
 
-V76_LINUX_BINARIES = [
+BINARIES = [
 "bin/racket",
 "bin/raco",
 ]

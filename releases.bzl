@@ -32,6 +32,12 @@ def racket_releases():
   )
 
   http_file(
+    name = "racket_minimal_x86_64_8_0_osx",
+    urls = ["https://download.racket-lang.org/releases/8.0/installers/racket-minimal-8.0-x86_64-macosx.tgz"],
+    sha256 = "b09323233434d951cede0f521ad649c083016cc55c8a75fc35391b7d61bb3bbc"
+  )
+
+  http_file(
     name = "racket_minimal_x86_64_7_0_linux",
     urls = ["https://download.racket-lang.org/releases/7.0/installers/racket-minimal-7.0-x86_64-linux.tgz"],
     sha256 = "bc144c57717b05b2f92d8a53a26a2453f1d0430315ffe74800aab2f56f54a7f8"
@@ -47,4 +53,10 @@ def racket_releases():
     name = "racket_minimal_x86_64_7_6_linux",
     urls = ["https://download.racket-lang.org/releases/7.6/installers/racket-minimal-7.6-x86_64-linux.tgz"],
     sha256 = "c915d223a939c430f5fd334efe172317128912c637b7317e13fef8125206c1c5"
+  )
+
+  http_file(
+    name = "racket_minimal_x86_64_8_0_linux",
+    urls = ["https://download.racket-lang.org/releases/8.0/installers/racket-minimal-8.0-x86_64-linux.tgz"],
+    sha256 = "aeb14395d3a6c4251d9e4795fd62b4fdce23ec2cf7a41d2c61b372547f9ddfb2"
   )

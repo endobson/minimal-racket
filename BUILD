@@ -16,8 +16,8 @@ racket_bootstrap_toolchain(
 
 racket_bootstrap_toolchain(
     name = "linux_racket_bootstrap_toolchain_impl",
-    exec_core_racket = "//linux/v8.0:racket-src-linux",
-    exec_racket_bin = "//linux/v8.0:bin/racket",
+    exec_core_racket = "//linux/v9.1:racket-src-linux",
+    exec_racket_bin = "//linux/v9.1:bin/racket",
 )
 
 racket_toolchain(
@@ -31,10 +31,10 @@ racket_toolchain(
 
 racket_toolchain(
     name = "linux_linux_racket_toolchain_impl",
-    exec_core_racket = "//linux/v8.0:racket-src-linux",
-    exec_racket_bin = "//linux/v8.0:bin/racket",
-    target_core_racket = "//linux/v8.0:racket-src-linux",
-    target_racket_bin = "//linux/v8.0:bin/racket",
+    exec_core_racket = "//linux/v9.1:racket-src-linux",
+    exec_racket_bin = "//linux/v9.1:bin/racket",
+    target_core_racket = "//linux/v9.1:racket-src-linux",
+    target_racket_bin = "//linux/v9.1:bin/racket",
     bazel_tools = "//build_rules:bazel-tools",
 )
 
@@ -42,15 +42,15 @@ racket_toolchain(
     name = "osx_linux_racket_toolchain_impl",
     exec_core_racket = "//osx/v8.0:racket-src-osx",
     exec_racket_bin = "//osx/v8.0:bin/racket",
-    target_core_racket = "//linux/v8.0:racket-src-linux",
-    target_racket_bin = "//linux/v8.0:bin/racket",
+    target_core_racket = "//linux/v9.1:racket-src-linux",
+    target_racket_bin = "//linux/v9.1:bin/racket",
     bazel_tools = "//build_rules:bazel-tools",
 )
 
 racket_toolchain(
     name = "linux_osx_racket_toolchain_impl",
-    exec_core_racket = "//linux/v8.0:racket-src-linux",
-    exec_racket_bin = "//linux/v8.0:bin/racket",
+    exec_core_racket = "//linux/v9.1:racket-src-linux",
+    exec_racket_bin = "//linux/v9.1:bin/racket",
     target_core_racket = "//osx/v8.0:racket-src-osx",
     target_racket_bin = "//osx/v8.0:bin/racket",
     bazel_tools = "//build_rules:bazel-tools",
@@ -60,8 +60,8 @@ racket_toolchain(
 toolchain(
     name = "osx_racket_bootstrap_toolchain",
     exec_compatible_with = [
-        "@platforms//os:osx",
-        "@platforms//cpu:x86_64",
+        "@@platforms//os:osx",
+        "@@platforms//cpu:x86_64",
     ],
     toolchain = ":osx_racket_bootstrap_toolchain_impl",
     toolchain_type = ":racket_bootstrap_toolchain",
@@ -70,8 +70,8 @@ toolchain(
 toolchain(
     name = "linux_racket_bootstrap_toolchain",
     exec_compatible_with = [
-        "@platforms//os:linux",
-        "@platforms//cpu:x86_64",
+        "@@platforms//os:linux",
+        "@@platforms//cpu:x86_64",
     ],
     toolchain = ":linux_racket_bootstrap_toolchain_impl",
     toolchain_type = ":racket_bootstrap_toolchain",
@@ -80,12 +80,12 @@ toolchain(
 toolchain(
     name = "osx_osx_racket_toolchain",
     exec_compatible_with = [
-        "@platforms//os:osx",
-        "@platforms//cpu:x86_64",
+        "@@platforms//os:osx",
+        "@@platforms//cpu:x86_64",
     ],
     target_compatible_with = [
-        "@platforms//os:osx",
-        "@platforms//cpu:x86_64",
+        "@@platforms//os:osx",
+        "@@platforms//cpu:x86_64",
     ],
     toolchain = ":osx_osx_racket_toolchain_impl",
     toolchain_type = ":racket_toolchain",
@@ -94,12 +94,12 @@ toolchain(
 toolchain(
     name = "linux_linux_racket_toolchain",
     exec_compatible_with = [
-        "@platforms//os:linux",
-        "@platforms//cpu:x86_64",
+        "@@platforms//os:linux",
+        "@@platforms//cpu:x86_64",
     ],
     target_compatible_with = [
-        "@platforms//os:linux",
-        "@platforms//cpu:x86_64",
+        "@@platforms//os:linux",
+        "@@platforms//cpu:x86_64",
     ],
     toolchain = ":linux_linux_racket_toolchain_impl",
     toolchain_type = ":racket_toolchain",
@@ -108,12 +108,12 @@ toolchain(
 toolchain(
     name = "osx_linux_racket_toolchain",
     exec_compatible_with = [
-        "@platforms//os:osx",
-        "@platforms//cpu:x86_64",
+        "@@platforms//os:osx",
+        "@@platforms//cpu:x86_64",
     ],
     target_compatible_with = [
-        "@platforms//os:linux",
-        "@platforms//cpu:x86_64",
+        "@@platforms//os:linux",
+        "@@platforms//cpu:x86_64",
     ],
     toolchain = ":osx_linux_racket_toolchain_impl",
     toolchain_type = ":racket_toolchain",
@@ -122,12 +122,12 @@ toolchain(
 toolchain(
     name = "linux_osx_racket_toolchain",
     exec_compatible_with = [
-        "@platforms//os:linux",
-        "@platforms//cpu:x86_64",
+        "@@platforms//os:linux",
+        "@@platforms//cpu:x86_64",
     ],
     target_compatible_with = [
-        "@platforms//os:osx",
-        "@platforms//cpu:x86_64",
+        "@@platforms//os:osx",
+        "@@platforms//cpu:x86_64",
     ],
     toolchain = ":linux_osx_racket_toolchain_impl",
     toolchain_type = ":racket_toolchain",

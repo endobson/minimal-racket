@@ -217,10 +217,20 @@ def _bootstrap_lib_impl(ctx):
 def _collection_impl(ctx):
   output_links = ctx.actions.declare_file("%s_links.rktd" % ctx.attr.name)
 
-  ctx.actions.write(
-    output = output_links,
-    content = "((\"%s\" \".\"))" % ctx.attr.name,
-  )
+  if (ctx.attr.root_directory != ""):
+    ctx.actions.write(
+      output = output_links,
+      content = "((root \"%s\"))" % ctx.attr.root_directory,
+    )
+  else:
+    collection_name = ctx.attr.collection_name
+    if collection_name == "":
+      collection_name = ctx.attr.name
+
+    ctx.actions.write(
+      output = output_links,
+      content = "((\"%s\" \".\"))" % collection_name,
+    )
 
   return [
     DefaultInfo(
@@ -298,6 +308,8 @@ _racket_collection_attrs = {
   "deps": attr.label_list(
     providers = [RacketInfo],
   ),
+  "collection_name": attr.string(),
+  "root_directory": attr.string(),
 }
 
 _racket_bundle_attrs = {

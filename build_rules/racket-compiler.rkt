@@ -105,6 +105,7 @@
     (define port (make-limited-input-port (current-input-port) proto-length))
     (define req (read-work-request port))
     (define stdout/stderr (open-output-string))
+    ;; TODO add log receiver that logs to new stderr
     (define stdin (open-input-string ""))
     (define exit-code
       (parameterize ([current-output-port stdout/stderr]
